@@ -1,4 +1,4 @@
-## Module: ExchangeRateProvider
+## ExchangeRateProvider
 
 A Ruby client for fetching exchange rates from CurrencyAPI ([https://app.currencyapi.com](https://app.currencyapi.com)).
 
@@ -23,25 +23,13 @@ A Ruby client for fetching exchange rates from CurrencyAPI ([https://app.currenc
    # checkout to the branch
    git checkout nywton_barros
    ```
-
-2. Ensure you have Bundler installed (optional):
+2. Ensure you have Bundler installed and install the dependencies:
 
    ```bash
    gem install bundler
-   ```
 
-3. If using Bundler, add to your `Gemfile`:
-
-   ```ruby
-   gem 'json'
-   ```
-
-   Then run:
-
-   ```bash
    bundle install
    ```
-
 ---
 
 ## Configuration
@@ -58,12 +46,21 @@ A Ruby client for fetching exchange rates from CurrencyAPI ([https://app.currenc
    ```bash
    export CURRENCY_API_KEY="your_actual_currencyapi_key_here"
    ```
+---
 
+## Running
+
+```bash
+# ensure you have exported your API key
+irb -r './lib/exchange_rate_provider.rb'
+
+# Gets the latest EUR, BRL and JPY exchange rates in USD (USD/EUR, USD/BRL, USD/JPY)
+ExchangeRateProvider.new.latest(targets: ['EUR', 'BRL', 'JPY'])
+# => {"BRL" => 5.501471065, "EUR" => 0.8634201726, "JPY" => 147.5063664226}
+```
 ---
 
 ## Usage
-
-## Dockerfile (in progress...)
 
 ```ruby
 require_relative 'lib/exchange_rate_provider'
@@ -75,22 +72,12 @@ provider = ExchangeRateProvider.new
 rates = provider.latest
 # => { "EUR" => 0.92, "BRL" => 5.50, ... }
 
-# 3. Fetch specific targets:
+# 3. Fetch usd rates for specific targets:
 brl_rate = provider.latest(targets: 'BRL')
 # => { "BRL" => 5.50 }
-
-# 4. Fetch a single rate:
-eur_to_jpy = provider.rate('EUR', 'JPY')
-# => 158.23  (example value)
-```
-
----
-
-## Running
-
-```bash
-irb -r './lib/exchange_rate_provider.rb'
-ExchangeRateProvider.new.latest
+# 4. Fetch specific base and targets: (BRL/USD, BRL/EUR)
+provider.latest(base: 'BRL', targets: ['USD', 'EUR'])
+#=> {"EUR" => 0.1569435088, "USD" => 0.1817695646}
 ```
 
 ---
@@ -105,11 +92,12 @@ Run the full test suite:
 rspec
 ```
 
-A sample spec file lives at `spec/lib/exchange_rate_provider_spec.rb`. The tests inject a fake HTTP client and verify:
+Or if you want run guard:
 
-* Successful parsing of rates
-* Error handling on non-success HTTP status
-* JSON parse errors
-* Missing `data` key
+```bash
+bundle exec guard
+```
+
+A sample spec file lives at `spec/lib/fixtures/requests/currencyapi/get_latest_currency.json`, representing the response from the CurrencyAPI.
 
 ---
