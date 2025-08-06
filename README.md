@@ -1,138 +1,115 @@
-# Desafio Técnico - Ruby on Rails + Vue.js (Opcional)
+## Module: ExchangeRateProvider
 
-## 💸 Desafio: Conversor de Moedas
-
-Você deverá implementar uma aplicação que permita a conversão de valores entre moedas, utilizando **Ruby on Rails** como backend e **Vue.js** como frontend (opcional).
-
-> **Importante:** Caso o candidato não possua familiaridade com Vue.js, a entrega pode ser feita exclusivamente com Rails e APIs RESTful.
+A Ruby client for fetching exchange rates from CurrencyAPI ([https://app.currencyapi.com](https://app.currencyapi.com)).
 
 ---
 
-## 📆 Requisitos do Projeto
+## Prerequisites
 
-### Funcionalidades principais
+* Ruby 3.x
+* A CurrencyAPI account (signup at [https://app.currencyapi.com](https://app.currencyapi.com))
+* Your API key from the CurrencyAPI dashboard
 
-1. A API deve permitir a conversão entre pelo menos **4 moedas**:
+---
 
-   * BRL (Real)
-   * USD (Dólar Americano)
-   * EUR (Euro)
-   * JPY (Iene)
+## Installation
 
-2. As **taxas de câmbio** devem ser obtidas da API:
+1. Clone this repository or copy the `lib/exchange_rate_provider.rb` file into your project:
 
-   * [https://app.currencyapi.com/](https://app.currencyapi.com/)
-   * Documentação oficial: [https://currencyapi.com/docs](https://currencyapi.com/docs)
-   * A API gratuita requer autenticação com chave e retorna taxas baseadas na moeda desejada.
+   ```bash
+   git clone https://github.com/nywton/currency-converter-ruby
+   cd currency-converter-ruby
 
-3. A aplicação deve **persistir** cada transação realizada, contendo:
-
-   * ID do usuário
-   * Moeda de origem e destino
-   * Valor de origem
-   * Valor convertido (destino)
-   * Taxa de conversão
-   * Data/Hora UTC
-
-4. As transações devem estar disponíveis via endpoint:
-
-   * `GET /transactions?user_id=123`
-
-5. Uma transação de sucesso deve retornar:
-
-   ```json
-   {
-     "transaction_id": 42,
-     "user_id": 123,
-     "from_currency": "USD",
-     "to_currency": "BRL",
-     "from_value": 100,
-     "to_value": 525.32,
-     "rate": 5.2532,
-     "timestamp": "2024-05-19T18:00:00Z"
-   }
+   # checkout to the branch
+   git checkout nywton_barros
    ```
 
-6. Casos de falha devem retornar **status HTTP adequado** e mensagem de erro clara.
+2. Ensure you have Bundler installed (optional):
 
-7. O projeto deve conter **testes unitários e de integração**.
+   ```bash
+   gem install bundler
+   ```
 
-8. O repositório deve incluir um **README.md** com:
+3. If using Bundler, add to your `Gemfile`:
 
-   * Instruções para rodar o projeto
-   * Explicação do propósito
-   * Principais decisões de arquitetura
-   * Como os dados estão organizados (separação de camadas)
+   ```ruby
+   gem 'json'
+   ```
 
-9. O código deve estar todo em **inglês**.
+   Then run:
 
-10. O projeto deve ser entregue via repositório no GitHub.
-
----
-
-## 🔜 Itens Desejáveis
-
-* Logs
-* Tratamento de exceções personalizado
-* Documentação da API (Swagger, Rswag, Postman, etc.)
-* Coesão de commits e mensagens descritivas
-* Configuração de **linters** (Rubocop, ESLint, etc.)
-* Deploy funcional (Heroku, Fly.io, etc.)
-* Integração contínua (CI/CD com GitHub Actions ou similar)
-* Testes de ponta a ponta se usar Vue.js (Cypress, Playwright)
+   ```bash
+   bundle install
+   ```
 
 ---
 
-## 🚀 Stack Tecnológica Esperada
+## Configuration
 
-### Backend:
+1. Visit the CurrencyAPI dashboard to retrieve your API key:
 
-* Ruby on Rails 7+
-* PostgreSQL ou SQLite
-* Faraday ou HTTParty para chamadas externas
-* RSpec para testes
+   ```bash
+   # Open in browser:
+   https://app.currencyapi.com/dashboard
+   ```
 
-### Frontend (opcional):
+2. Export your API key as an environment variable:
 
-* Vue.js 3 + TypeScript
-* Axios
-* Pinia ou Vuex (opcional)
-* TailwindCSS (opcional)
-
----
-
-## 💡 Diferenciais para o Perfil da Vaga
-
-* Familiaridade com **AWS** (EC2, RDS, S3)
-* Capacidade de discutir arquitetura e otimização de custos
-* Experiência com **CI/CD**
-* Excelente comunicação em inglês
-* Proatividade e interesse em produto
-* Participação em decisões técnicas com o time de produto e dados
+   ```bash
+   export CURRENCY_API_KEY="your_actual_currencyapi_key_here"
+   ```
 
 ---
 
-## 📋 Entrega
+## Usage
 
-Para padronizar a entrega e facilitar a análise:
+## Dockerfile (in progress...)
 
-1. Faça um **fork deste repositório** para sua conta pessoal do GitHub.
-2. Crie uma **branch com seu nome em snake_case** (exemplo: `joao_silva_souza`).
-3. Suba sua solução utilizando **commits organizados e descritivos**.
-4. Após finalizar:
-   - Certifique-se de que o repositório esteja **público**
-   - Envie o link do seu fork para nossa equipe com:
-     - **Título:** `Entrega - joao_silva_souza`
-     - **Descrição:** Nome completo, data da entrega e quaisquer observações que julgar relevantes.
+```ruby
+require_relative 'lib/exchange_rate_provider'
 
-> ✅ **Dica**: Você pode incluir um arquivo `THOUGHTS.md` com decisões técnicas, ideias descartadas e sugestões de melhoria.
+# 1. Instantiate the provider (uses Net::HTTP by default):
+provider = ExchangeRateProvider.new
+
+# 2. Fetch all rates (base USD):
+rates = provider.latest
+# => { "EUR" => 0.92, "BRL" => 5.50, ... }
+
+# 3. Fetch specific targets:
+brl_rate = provider.latest(targets: 'BRL')
+# => { "BRL" => 5.50 }
+
+# 4. Fetch a single rate:
+eur_to_jpy = provider.rate('EUR', 'JPY')
+# => 158.23  (example value)
+```
 
 ---
 
-## 📢 Contato e Observações
+## Running
 
-* Caso utilize algum recurso pago (ex: API, hospedagem), informe alternativas gratuitas no README.
-* Encorajamos entregas que demonstrem pensamento crítico sobre performance, qualidade de código e arquitetura.
-* Se tiver sugestões ou dúvidas, registre no README como "Considerações finais".
+```bash
+irb -r './lib/exchange_rate_provider.rb'
+ExchangeRateProvider.new.latest
+```
 
-Boa sorte! 🚀
+---
+
+## Testing
+
+We use RSpec for unit tests. Ensure you have the `rspec` gem installed:
+
+Run the full test suite:
+
+```bash
+rspec
+```
+
+A sample spec file lives at `spec/lib/exchange_rate_provider_spec.rb`. The tests inject a fake HTTP client and verify:
+
+* Successful parsing of rates
+* Error handling on non-success HTTP status
+* JSON parse errors
+* Missing `data` key
+
+---
