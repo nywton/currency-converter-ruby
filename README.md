@@ -79,10 +79,10 @@ require_relative 'lib/exchange_rate_provider'
 require_relative 'lib/exchange_rate_converter'
 
 # 1. fetch the current rates:
-rates = exchangerateprovider.new.latest(base: 'usd', targets: %w[usd eur brl jpy])
+rates = ExchangeRateProvider.new.latest(base: 'usd', targets: %w[usd eur brl jpy])
 
 # 2. instantiate the converter with the rates:
-converter = exchangerateconverter.new(rates)
+converter = ExchangeRateConverter.new(rates)
 
 # 3. convert 100 usd to brl:
 amount_in_brl = converter.convert(100, base: 'usd', target: 'brl')
