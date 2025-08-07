@@ -1,9 +1,21 @@
 ## Exchange Rate Converting
 [![CI](https://github.com/nywton/currency-converter-ruby/actions/workflows/ci.yml/badge.svg)](https://github.com/nywton/currency-converter-ruby/actions/workflows/ci.yml)
 
-A Rails app for fetching and convert exchange rates from CurrencyAPI ([https://app.currencyapi.com](https://app.currencyapi.com)).
+# Currency Converter
+
+A lightweight Rails app that fetches exchange rates from CurrencyAPI and caches them locally—enabling **unlimited conversions** without spending your API credits.
+
+**Key Features**
+- **Unlimited Calls**: All conversions use cached rates, so you never consume CurrencyAPI credits.
+- **Simple REST API**:  
+- **Full Currency Support**: Converts any currency available in CurrencyAPI.  
+
+
+🔗 [Full currency list](https://currencyapi.com/docs/currency-list)
 
 ---
+Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/)
+
 
 ## Prerequisites
 
@@ -134,8 +146,9 @@ A sample spec file lives at `spec/lib/fixtures/requests/currencyapi/get_latest_c
 ---
 ## CLI Usage
 
-NOTE: Ensure you have `CURRENCY_API_KEY` set in your environment.
-NOTE: Each execution will count as api calls to CurrencyAPI.
+* NOTE: Ensure you have `CURRENCY_API_KEY` set in your environment.
+
+* NOTE: Each execution will count as api calls to CurrencyAPI.
 
 ### Fetching Rates from CurrencyAPI
 

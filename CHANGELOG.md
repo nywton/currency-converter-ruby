@@ -73,4 +73,3 @@ amount_in_brl = converter.convert(100, base: 'usd', target: 'brl')
   * 429 Rate limit → “Rate limit exceeded”
   * 5xx Server errors → “Server error <code>”
   * Network failures → “Network error: <message>”
-* **YARD-style docs** with examples and link to the official docs.
