@@ -1,6 +1,6 @@
-## ExchangeRateProvider
+## Exchange Rate Converting
 
-A Ruby client for fetching exchange rates from CurrencyAPI ([https://app.currencyapi.com](https://app.currencyapi.com)).
+A Ruby library for fetching and convert exchange rates from CurrencyAPI ([https://app.currencyapi.com](https://app.currencyapi.com)).
 
 ---
 
@@ -48,19 +48,8 @@ A Ruby client for fetching exchange rates from CurrencyAPI ([https://app.currenc
    ```
 ---
 
-## Running
 
-```bash
-# ensure you have exported your API key
-irb -r './lib/exchange_rate_provider.rb'
-
-# Gets the latest EUR, BRL and JPY exchange rates in USD (USD/EUR, USD/BRL, USD/JPY)
-ExchangeRateProvider.new.latest(targets: ['EUR', 'BRL', 'JPY'])
-# => {"BRL" => 5.501471065, "EUR" => 0.8634201726, "JPY" => 147.5063664226}
-```
----
-
-## Usage
+## Fetching rates
 
 ```ruby
 require_relative 'lib/exchange_rate_provider'
@@ -81,6 +70,25 @@ provider.latest(base: 'BRL', targets: ['USD', 'EUR'])
 ```
 
 ---
+## Converting amounts
+
+this project also provides an `exchange_rate_converter` to perform amount conversions using fetched rates:
+
+```ruby
+require_relative 'lib/exchange_rate_provider'
+require_relative 'lib/exchange_rate_converter'
+
+# 1. fetch the current rates:
+rates = exchangerateprovider.new.latest(base: 'usd', targets: %w[usd eur brl jpy])
+
+# 2. instantiate the converter with the rates:
+converter = exchangerateconverter.new(rates)
+
+# 3. convert 100 usd to brl:
+amount_in_brl = converter.convert(100, base: 'usd', target: 'brl')
+# => 550.1471065
+```
+---
 
 ## Testing
 
@@ -89,7 +97,7 @@ We use RSpec for unit tests. Ensure you have the `rspec` gem installed:
 Run the full test suite:
 
 ```bash
-rspec
+bundle exec rspec
 ```
 
 Or if you want run guard:
