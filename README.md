@@ -15,7 +15,7 @@ A Rails app for fetching and convert exchange rates from CurrencyAPI ([https://a
 
 ## Configuration
 
-1. Clone this repository or copy the `lib/exchange_rate_provider.rb` file into your project:
+#### 1. Clone this repository or copy the `lib/exchange_rate_provider.rb` file into your project:
 
 ```bash
  git clone https://github.com/nywton/currency-converter-ruby
@@ -25,7 +25,7 @@ A Rails app for fetching and convert exchange rates from CurrencyAPI ([https://a
  git checkout nywton_barros
 ```
 
-2. Copy the example environment file
+#### 2. Copy the example environment file
 
 First, make a copy of the sample env file:
 
@@ -33,7 +33,7 @@ First, make a copy of the sample env file:
 cp sample.env .env
 ````
 
-3. Visit the CurrencyAPI dashboard to retrieve your API key:
+#### 3. Visit the CurrencyAPI dashboard to retrieve your API key:
 
 ```bash
  # Open in browser:
@@ -46,7 +46,7 @@ Then open the newly created `.env` in your editor and set your `CURRENCY_API_KEY
 CURRENCY_API_KEY="your_actual_currencyapi_key_here"
 ```
 
-4. (optional) Export your API key as an environment variable for local development:
+#### 4. (optional) Export your API key as an environment variable for local development:
 
 ```bash
 export CURRENCY_API_KEY="your_actual_currencyapi_key_here"
@@ -55,7 +55,7 @@ export CURRENCY_API_KEY="your_actual_currencyapi_key_here"
 
 ## Install and Run
 
-2. Docker setup:
+#### 2. Docker setup:
 
 Spin up the app inside Docker (no local Ruby install needed):
 
@@ -70,7 +70,7 @@ docker compose up web -d
 docker compose exec web bin/rails db:create db:migrate
    ```
 
-3. Local setup:
+#### 3. Local setup:
  Ensure you have `CURRENCY_API_KEY` set in your environment:
 
 ```bash
@@ -84,7 +84,7 @@ bin/rails db:create db:migrate
 
 ## Running Rails Server
 
-1. Docker:
+#### 1. Docker:
 
 ```bash
 # Build the image
@@ -93,7 +93,7 @@ docker-compose up web
 # or
 docker-compose run --rm --remove-orphans web bin/rails server -b 0.0.0.0 -p 3000
 ```
-2. Local:
+#### 2. Local:
 
 ```bash
 bin/rails server -b 0.0.0.0 -p 3000
@@ -106,13 +106,13 @@ We use RSpec for unit tests. Ensure you have the `rspec` gem installed:
 
 Run the full test suite:
 
-1. Docker:
+#### 1. Docker:
 
 ```bash
 docker-compose run --rm --remove-orphans test
 ```
 
-2. Local:
+#### 2. Local:
 
 ```bash
 bundle exec rspec
@@ -140,7 +140,7 @@ The ExchangeRateProvider class can be used to fetch exchange rates from Currency
 
 * The following examples show how to use the ExchangeRateProvider class.
 
-1. Fetch all rates with Docker: (ensure you have `CURRENCY_API_KEY` set in your environment)
+#### 1. Fetch all rates with Docker: (ensure you have `CURRENCY_API_KEY` set in your environment)
 
 ```bash
 # Default base is USD
@@ -152,7 +152,7 @@ docker-compose run --rm web --remove-orphans bin/rails runner "puts ExchangeRate
 # => {"USD" => 0.1832108847, "EUR" => 0.1570722103}
 ```
 
-2. Fetch all rates with local Ruby:
+#### 2. Fetch all rates with local Ruby:
 
 ```ruby
 # in bash
@@ -183,7 +183,7 @@ The ExchangeRateConverter class can be used to convert amounts using exchange ra
 * It makes possible to cache fetched rates to avoid making repeated requests to CurrencyAPI.
 * The following examples show how to use the ExchangeRateConverter class.
 
-1. Convert amounts with Docker:
+#### 1. Convert amounts with Docker:
 
 ```bash
 # Default base is USD. Convert 100 usd to brl:
@@ -196,7 +196,7 @@ docker-compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRate
 # Run from fixtures:
 ```
 
-2. Convert amounts with local Ruby (irb):
+#### 2. Convert amounts with local Ruby (irb):
 
 this project also provides an `exchange_rate_converter` to perform amount conversions using fetched rates:
 
@@ -220,3 +220,7 @@ amount_in_brl = converter.convert(100, base: 'usd', target: 'brl')
 # => 550.1471065
 ```
 ---
+
+## ChangeLog
+
+For a detailed history of changes and version notes, please see the [CHANGELOG.md](./CHANGELOG.md) file.
