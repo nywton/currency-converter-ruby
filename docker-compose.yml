@@ -1,0 +1,55 @@
+services:
+  # 1. Use the “up” command, which builds and starts the containers:
+  # docker-compose up --build
+  # docker-compose exec web bin/rails db:create db:migrate
+  #
+  # 2. Use a one-off run, which builds & starts a fresh “web” container just for your command:
+  # docker-compose run --rm web bin/rails db:create db:migrate
+  web: &base
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        RUBY_VERSION: "${RUBY_VERSION:-3.4.4}"
+    volumes:
+      - .:/rails
+      - rails_bundle:/usr/local/bundle
+      - sqlite_data:/rails/storage
+    working_dir: /rails
+    environment:
+      CURRENCY_API_KEY: "${CURRENCY_API_KEY:-}"
+      RAILS_ENV: development
+      BUNDLE_DEPLOYMENT: "0"
+      BUNDLE_WITHOUT: "production"
+      BUNDLE_JOBS: 4
+      BUNDLE_RETRY: 3
+      BUNDLE_FROZEN: "false"
+
+    ports:
+      - "3000:3000"
+    command: >
+      bash -lc "
+        bundle config set frozen false &&
+        bundle install &&
+        bin/rails db:create db:migrate &&
+        bin/rails server -b 0.0.0.0 -p 3000
+      "
+
+  # docker-compose run --rm --remove-orphans test
+  test:
+    <<: *base
+    environment:
+      RAILS_ENV: test
+      CURRENCY_API_KEY: "${CURRENCY_API_KEY:-}"
+    command: >
+      bash -lc "
+        bundle config set frozen false &&
+        bundle install &&
+        bin/rails db:create db:migrate &&
+        bundle exec rspec
+      "
+
+volumes:
+  rails_bundle:
+  sqlite_data:
+
