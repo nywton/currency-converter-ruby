@@ -53,6 +53,11 @@ export CURRENCY_API_KEY="your_actual_currencyapi_key_here"
 ```
 ---
 
+**NOTE:** Currency API currently has limited free api calls. I will improve this by adding a cache layer to make poosible unlimited rate convertions in a day.
+
+<img width="1351" height="405" alt="image" src="https://github.com/user-attachments/assets/4a94071e-c74b-4715-9782-71102d270682" />
+
+
 ## Install and Run
 
 #### 2. Docker setup:
