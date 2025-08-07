@@ -1,4 +1,5 @@
 ## Exchange Rate Converting
+[![CI](https://github.com/nywton/currency-converter-ruby/actions/workflows/ci.yml/badge.svg)](https://github.com/nywton/currency-converter-ruby/actions/workflows/ci.yml)
 
 A Ruby library for fetching and convert exchange rates from CurrencyAPI ([https://app.currencyapi.com](https://app.currencyapi.com)).
 
