@@ -17,13 +17,13 @@ A Rails app for fetching and convert exchange rates from CurrencyAPI ([https://a
 
 1. Clone this repository or copy the `lib/exchange_rate_provider.rb` file into your project:
 
-   ```bash
-   git clone https://github.com/nywton/currency-converter-ruby
-   cd currency-converter-ruby
+```bash
+ git clone https://github.com/nywton/currency-converter-ruby
+ cd currency-converter-ruby
 
-   # checkout to the branch
-   git checkout nywton_barros
-   ```
+ # checkout to the branch
+ git checkout nywton_barros
+```
 
 2. Copy the example environment file
 
@@ -35,10 +35,10 @@ cp sample.env .env
 
 3. Visit the CurrencyAPI dashboard to retrieve your API key:
 
-   ```bash
-   # Open in browser:
-   https://app.currencyapi.com/dashboard
-   ```
+```bash
+ # Open in browser:
+ https://app.currencyapi.com/dashboard
+```
 
 Then open the newly created `.env` in your editor and set your `CURRENCY_API_KEY`:
 
@@ -48,9 +48,9 @@ CURRENCY_API_KEY="your_actual_currencyapi_key_here"
 
 4. (optional) Export your API key as an environment variable for local development:
 
-   ```bash
-   export CURRENCY_API_KEY="your_actual_currencyapi_key_here"
-   ```
+```bash
+export CURRENCY_API_KEY="your_actual_currencyapi_key_here"
+```
 ---
 
 ## Install and Run
@@ -59,46 +59,45 @@ CURRENCY_API_KEY="your_actual_currencyapi_key_here"
 
 Spin up the app inside Docker (no local Ruby install needed):
 
-   ```bash
-   # Build the image
-   docker compose build
+```bash
+# Build the image
+docker compose build
 
-   # Start the app container
-   docker compose up web -d
+# Start the app container
+docker compose up web -d
 
-   # Run migrations
-   docker compose exec web bin/rails db:create db:migrate
+# Run migrations
+docker compose exec web bin/rails db:create db:migrate
    ```
 
 3. Local setup:
  Ensure you have `CURRENCY_API_KEY` set in your environment:
 
-   ```bash
-   gem install bundler
+```bash
+gem install bundler
 
-   bundle install
+bundle install
 
-   bin/rails db:create db:migrate
-   ```
+bin/rails db:create db:migrate
+```
 ---
 
 ## Running Rails Server
 
 1. Docker:
 
-   ```bash
-   # Build the image
-   docker-compose up web
+```bash
+# Build the image
+docker-compose up web
 
-   # or
-   docker-compose run --rm --remove-orphans web bin/rails server -b 0.0.0.0 -p 3000
-   ```
+# or
+docker-compose run --rm --remove-orphans web bin/rails server -b 0.0.0.0 -p 3000
+```
 2. Local:
 
-   ```bash
-   bin/rails server -b 0.0.0.0 -p 3000
-   ```
-
+```bash
+bin/rails server -b 0.0.0.0 -p 3000
+```
 ---
 
 ## Testing
@@ -109,21 +108,21 @@ Run the full test suite:
 
 1. Docker:
 
-   ```bash
-   docker-compose run --rm --remove-orphans test
-   ```
+```bash
+docker-compose run --rm --remove-orphans test
+```
 
 2. Local:
 
-   ```bash
-   bundle exec rspec
-   ```
+```bash
+bundle exec rspec
+```
 
 Or if you want run guard:
 
-  ```bash
-  bundle exec guard
-  ```
+```bash
+bundle exec guard
+```
 
 A sample spec file lives at `spec/lib/fixtures/requests/currencyapi/get_latest_currency.json`, representing the response from the CurrencyAPI.
 
@@ -143,37 +142,37 @@ The ExchangeRateProvider class can be used to fetch exchange rates from Currency
 
 1. Fetch all rates with Docker: (ensure you have `CURRENCY_API_KEY` set in your environment)
 
-   ```bash
-   # Default base is USD
-   docker-compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateProvider.new.latest"
-   # => { "EUR" => 0.92, "BRL" => 5.50, ... }
+```bash
+# Default base is USD
+docker-compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateProvider.new.latest"
+# => { "EUR" => 0.92, "BRL" => 5.50, ... }
 
-   # Fetch specific base and targets:
-   docker-compose run --rm web --remove-orphans bin/rails runner "puts ExchangeRateProvider.new.latest(base: 'BRL', targets: ['USD', 'EUR'])"
-   # => {"USD" => 0.1832108847, "EUR" => 0.1570722103}
-   ```
+# Fetch specific base and targets:
+docker-compose run --rm web --remove-orphans bin/rails runner "puts ExchangeRateProvider.new.latest(base: 'BRL', targets: ['USD', 'EUR'])"
+# => {"USD" => 0.1832108847, "EUR" => 0.1570722103}
+```
 
 2. Fetch all rates with local Ruby:
 
-   ```ruby
-   # in bash
-   $ irb -r ./lib/exchange_rate_provider
+```ruby
+# in bash
+$ irb -r ./lib/exchange_rate_provider
 
-   # in irb
-   # 1. Instantiate the provider (uses Net::HTTP by default):
-   provider = ExchangeRateProvider.new
-   
-   # 2. Fetch all rates (base USD):
-   rates = provider.latest
-   # => { "EUR" => 0.92, "BRL" => 5.50, ... }
-   
-   # 3. Fetch usd rates for specific targets:
-   brl_rate = provider.latest(targets: 'BRL')
-   # => { "BRL" => 5.50 }
-   # 4. Fetch specific base and targets: (BRL/USD, BRL/EUR)
-   provider.latest(base: 'BRL', targets: ['USD', 'EUR'])
-   #=> {"EUR" => 0.1569435088, "USD" => 0.1817695646}
-   ```
+# in irb
+# 1. Instantiate the provider (uses Net::HTTP by default):
+provider = ExchangeRateProvider.new
+
+# 2. Fetch all rates (base USD):
+rates = provider.latest
+# => { "EUR" => 0.92, "BRL" => 5.50, ... }
+
+# 3. Fetch usd rates for specific targets:
+brl_rate = provider.latest(targets: 'BRL')
+# => { "BRL" => 5.50 }
+# 4. Fetch specific base and targets: (BRL/USD, BRL/EUR)
+provider.latest(base: 'BRL', targets: ['USD', 'EUR'])
+#=> {"EUR" => 0.1569435088, "USD" => 0.1817695646}
+```
 
 ---
 ### Converting amounts
@@ -186,16 +185,16 @@ The ExchangeRateConverter class can be used to convert amounts using exchange ra
 
 1. Convert amounts with Docker:
 
-   ```bash
-   # Default base is USD. Convert 100 usd to brl:
-   docker-compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'usd', target: 'brl')"
-   # => 550.1471065
+```bash
+# Default base is USD. Convert 100 usd to brl:
+docker-compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'usd', target: 'brl')"
+# => 550.1471065
 
-   # Convert specific base and target:
-   docker-compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'brl', target: 'usd')"
+# Convert specific base and target:
+docker-compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'brl', target: 'usd')"
 
-   # Run from fixtures:
-   ```
+# Run from fixtures:
+```
 
 2. Convert amounts with local Ruby (irb):
 
