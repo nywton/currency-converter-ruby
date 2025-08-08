@@ -62,6 +62,7 @@ CURRENCY_API_KEY="your_actual_currencyapi_key_here"
 
 ```bash
 export CURRENCY_API_KEY="your_actual_currencyapi_key_here"
+export JWT_SECRET_KEY="your_actual_jwt_secret_key_here"
 ```
 ---
 
@@ -70,7 +71,7 @@ export CURRENCY_API_KEY="your_actual_currencyapi_key_here"
 <img width="1351" height="405" alt="image" src="https://github.com/user-attachments/assets/4a94071e-c74b-4715-9782-71102d270682" />
 
 
-## Install and Run
+## Installation
 
 #### 2. Docker setup:
 
@@ -81,14 +82,14 @@ Spin up the app inside Docker (no local Ruby install needed):
 docker compose build
 
 # Start the app container
-docker compose up web -d
+docker compose up web
 
 # Run migrations
 docker compose exec web bin/rails db:create db:migrate
    ```
 
 #### 3. Local setup:
- Ensure you have `CURRENCY_API_KEY` set in your environment:
+ Ensure you have `CURRENCY_API_KEY` and `JWT_SECRET` set in your environment:
 
 ```bash
 gem install bundler
@@ -105,16 +106,47 @@ bin/rails db:create db:migrate
 
 ```bash
 # Build the image
-docker-compose up web
+docker compose up web
 
 # or
-docker-compose run --rm --remove-orphans web bin/rails server -b 0.0.0.0 -p 3000
+docker compose run --rm --remove-orphans web bin/rails server -b 0.0.0.0 -p 3000
 ```
 #### 2. Local:
 
 ```bash
 bin/rails server -b 0.0.0.0 -p 3000
 ```
+
+#### 3. Useful Docker commands:
+
+```bash
+# 1. Build the image
+docker compose build
+# (optional) Build from scratch (no cache)
+docker compose build --no-cache
+
+# 2. Run migrations and seeds
+docker compose exec web bin/rails db:setup
+# (optional) if there are no running containers
+docker compose run --rm web bin/rails db:setup
+
+# 3. Run tests
+docker compose run --rm test
+
+# 4. Run rails server
+docker compose up web --remove-orphans
+
+# 5. Run rails console
+docker compose exec web bin/rails console
+# (optional) if there are no running containers
+docker compose run --rm web bin/rails console
+
+# 6. Stop the containers
+docker compose down
+# (optional) Stop & remove containers, networks, volumes and images
+docker compose down --rmi all --volumes --remove-orphans   
+```
+
 ---
 
 ## Testing
@@ -126,7 +158,7 @@ Run the full test suite:
 #### 1. Docker:
 
 ```bash
-docker-compose run --rm --remove-orphans test
+docker compose run --rm test
 ```
 
 #### 2. Local:
@@ -144,6 +176,74 @@ bundle exec guard
 A sample spec file lives at `spec/lib/fixtures/requests/currencyapi/get_latest_currency.json`, representing the response from the CurrencyAPI.
 
 ---
+## Session API
+
+Authenticate a user and obtain a JSON Web Token (JWT) for subsequent requests.
+
+### Endpoint
+
+```
+POST /session
+```
+
+### Example Request with cURL
+
+```bash
+curl -X POST http://localhost:3000/session \
+  -H "Content-Type: application/json" \
+  -d '{"email_address":"jane@example.com","password":"secret"}'
+```
+
+### Request Details
+
+* **URL:** `http://localhost:3000/session`
+* **Headers:**
+
+  * `Content-Type: application/json`
+* **Body:**
+
+  ```json
+  {
+    "email_address": "jane@example.com",
+    "password": "secret"
+  }
+  ```
+
+### Successful Response
+
+* **Status:** `201 Created`
+* **Body:**
+
+  ```json
+  {
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3NTQ3MDEzNzR9.CfwA_v65OXetxtoooW9Ewa-2DAIS9CtwHdmtgfthX_I"
+  }
+  ```
+
+### Error Responses
+
+* **Status:** `401 Unauthorized`
+
+* **Body:**
+
+  ```json
+  {
+    "error": "Invalid credentials"
+  }
+  ```
+
+* **Status:** `400 Bad Request` (missing parameters)
+
+* **Body:**
+
+  ```json
+  {
+    "error": "Missing email_address or password"
+  }
+  ```
+
+---
+
 ## CLI Usage
 
 * NOTE: Ensure you have `CURRENCY_API_KEY` set in your environment.
@@ -162,11 +262,11 @@ The ExchangeRateProvider class can be used to fetch exchange rates from Currency
 
 ```bash
 # Default base is USD
-docker-compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateProvider.new.latest"
+docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateProvider.new.latest"
 # => { "EUR" => 0.92, "BRL" => 5.50, ... }
 
 # Fetch specific base and targets:
-docker-compose run --rm web --remove-orphans bin/rails runner "puts ExchangeRateProvider.new.latest(base: 'BRL', targets: ['USD', 'EUR'])"
+docker compose run --rm web --remove-orphans bin/rails runner "puts ExchangeRateProvider.new.latest(base: 'BRL', targets: ['USD', 'EUR'])"
 # => {"USD" => 0.1832108847, "EUR" => 0.1570722103}
 ```
 
@@ -205,11 +305,11 @@ The ExchangeRateConverter class can be used to convert amounts using exchange ra
 
 ```bash
 # Default base is USD. Convert 100 usd to brl:
-docker-compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'usd', target: 'brl')"
+docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'usd', target: 'brl')"
 # => 550.1471065
 
 # Convert specific base and target:
-docker-compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'brl', target: 'usd')"
+docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'brl', target: 'usd')"
 
 # Run from fixtures:
 ```

@@ -5,6 +5,9 @@ services:
   #
   # 2. Use a one-off run, which builds & starts a fresh “web” container just for your command:
   # docker-compose run --rm web bin/rails db:create db:migrate
+  #
+  # 3. Rails console
+  # docker compose exec web bash -lc "bundle exec rails console"
   web: &base
     build:
       context: .
@@ -13,11 +16,11 @@ services:
         RUBY_VERSION: "${RUBY_VERSION:-3.4.4}"
     volumes:
       - .:/rails
-      - rails_bundle:/usr/local/bundle
       - sqlite_data:/rails/storage
     working_dir: /rails
     environment:
       CURRENCY_API_KEY: "${CURRENCY_API_KEY:-}"
+      JWT_SECRET: "${JWT_SECRET:-}"
       RAILS_ENV: development
       BUNDLE_DEPLOYMENT: "0"
       BUNDLE_WITHOUT: "production"
@@ -50,6 +53,5 @@ services:
       "
 
 volumes:
-  rails_bundle:
   sqlite_data:
 
