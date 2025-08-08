@@ -198,20 +198,20 @@ Authenticate a user and obtain a JSON Web Token (JWT) for subsequent requests.
 ### Endpoint
 
 ```
-POST /session
+POST api/v1/session
 ```
 
 ### Example Request with cURL
 
 ```bash
-curl -X POST http://localhost:3000/session \
+curl -X POST http://localhost:3000/api/v1/session \
   -H "Content-Type: application/json" \
   -d '{"email_address":"jane@example.com","password":"secret"}'
 ```
 
 ### Request Details
 
-* **URL:** `http://localhost:3000/session`
+* **URL:** `http://localhost:3000/api/v1/session`
 * **Headers:**
 
   * `Content-Type: application/json`

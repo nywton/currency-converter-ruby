@@ -1,16 +1,16 @@
 require "rails_helper"
 require "jwt"
 
-RSpec.describe "Sessions API", type: :request do
+RSpec.describe Api::V1::SessionsController, type: :request do
   let(:jwt_secret) { "test_secret" }
   let(:user)       { instance_double(User, id: 42) }
-  let(:url)        { "/session" }
+  let(:url)        { api_v1_session_path }
 
   before do
     allow(ENV).to receive(:fetch).with("JWT_SECRET").and_return(jwt_secret)
   end
 
-  describe "POST /session" do
+  describe "POST api/v1/session" do
     context "with valid credentials" do
       before do
         allow(User).to receive(:authenticate_by).and_return(user)
