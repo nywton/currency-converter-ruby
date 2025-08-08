@@ -95,11 +95,12 @@ Spin up the app inside Docker (no local Ruby install needed):
    # Build the image
    docker compose build
    
-   # Start the app container
+   # Start the app container and run migrations
    docker compose up web
    
-   # Run migrations
-   docker compose exec web bin/rails db:create db:migrate
+   # Run migrations (optional since the app is already running)
+   docker compose exec web bin/rails db:setup
+
    ```
 
 3. Local setup:
@@ -107,11 +108,14 @@ Spin up the app inside Docker (no local Ruby install needed):
  Ensure you have `CURRENCY_API_KEY` and `JWT_SECRET` set in your environment:
 
    ```bash
-   gem install bundler
+   # Install dependencies
+   gem install bundler && bundle install --jobs 4
    
-   bundle install
-   
-   bin/rails db:create db:migrate
+   # Run create sqlite and run migrations (manually)
+   bin/rails db:setup
+
+   # Run tests
+   bundle exec rspec
    ```
 ---
 
@@ -122,9 +126,12 @@ Spin up the app inside Docker (no local Ruby install needed):
    ```bash
    # Build the image
    docker compose up web
+
+   # Run tests environment (bundle exec rspec)
+   docker compose run --rm test
    
-   # or
-   docker compose run --rm web bin/rails server -b 0.0.0.0 -p 3000
+   # Stop the app container
+   docker compose down
    ```
 2. Local:
 
@@ -146,7 +153,12 @@ Spin up the app inside Docker (no local Ruby install needed):
    docker compose run --rm web bin/rails db:setup
    
    # 3. Run tests
+   # Run rspec --format documentation
    docker compose run --rm test
+   # (optional) Run rspec without formatting
+   docker compose run --rm test bundle exec rspec
+   # (optional) Guard rspec
+   docker compose run --rm test bundle exec guard
    
    # 4. Run rails server
    docker compose up web --remove-orphans
@@ -173,13 +185,20 @@ Run the full test suite:
 1. Docker:
 
    ```bash
+   # rspec --format documentation
    docker compose run --rm test
+
+   # bundle exec rspec
+   docker compose run --rm test bundle exec rspec
+
+   # bundle exec guard
+   docker compose run --rm test bundle exec guard
    ```
 
 2. Local:
 
    ```bash
-   bundle exec rspec
+   bundle exec rspec --format documentation
    ```
 
 Or if you want run guard:
