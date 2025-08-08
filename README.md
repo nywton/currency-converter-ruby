@@ -19,6 +19,7 @@ Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/) intend to solve
 ---
 ## Table of Contents
 
+- [Currency Amount Limits](#currency-amount-limits)
 - [Prerequisites](#prerequisites)
 - [Configuration](#configuration)
 - [Installation](#installation)
@@ -30,6 +31,25 @@ Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/) intend to solve
   - [Converting amounts](#converting-amounts)
 - [ChangeLog](#changelog)
 
+---
+
+
+## Currency Amount Limits
+
+Your `from_value` and `to_value` columns are now `decimal(18,2)` (16 integer digits, 2 fractional). Here’s what the extremes look like in a few common currencies:
+
+| Currency         | Symbol | Maximum Value              | Minimum Value              |
+|------------------|--------|----------------------------|----------------------------|
+| US Dollar        | \$     | \$9 999 999 999 999 999.99  | -\$9 999 999 999 999 999.99 |
+| Euro             | €      | €9 999 999 999 999 999.99   | -€9 999 999 999 999 999.99  |
+| Japanese Yen     | ¥      | ¥9 999 999 999 999 999.99   | -¥9 999 999 999 999 999.99  |
+| Brazilian Real   | R\$    | R\$9 999 999 999 999 999.99 | -R\$9 999 999 999 999 999.99 |
+
+> **Note:**  
+> - All `from_value`/`to_value` entries must fall within ±9 999 999 999 999 999.99.  
+> - The `rate` column remains `decimal(18,4)` (14 integer digits, 4 fractional), so its range is 0.0001…99 999 999 999 999.9999.  
+
+---
 
 ## Prerequisites
 
@@ -38,7 +58,6 @@ Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/) intend to solve
 * Your API key from the CurrencyAPI dashboard
 
 ---
-
 ## Configuration
 
 1. Clone this repository or copy the `lib/exchange_rate_provider.rb` file into your project:
