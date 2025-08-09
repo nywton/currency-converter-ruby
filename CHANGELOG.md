@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] – 2025-08-09
+
+### Added
+
+* **TransactionsController** for managing transactions (`create` actions).
+* **TransactionsSerializer** for rendering single transaction details.
+* **TransactionsSerializer.collection** helper for rendering lists of transactions.
+
+### Changed
+
+* Removed `Api::V1` namespace — all transaction routes are now accessible directly under `/transactions`.
+
 ## [0.2.0] – 2025-08-06
 
 ### Added
