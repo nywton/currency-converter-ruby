@@ -3,6 +3,7 @@ module Api
     class SessionsController < ApplicationController
       skip_before_action :require_authentication
 
+      # POST /api/v1/session
       def create
         return render_unauthorized unless (user = authenticate_user)
 
