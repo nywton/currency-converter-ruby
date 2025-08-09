@@ -1,13 +1,12 @@
 services:
   # 1. Use the “up” command, which builds and starts the containers:
   # docker-compose up --build
-  # docker-compose exec web bin/rails db:create db:migrate
   #
   # 2. Use a one-off run, which builds & starts a fresh “web” container just for your command:
   # docker-compose run --rm web bin/rails db:create db:migrate
   #
   # 3. Rails console
-  # docker compose exec web bash -lc "bundle exec rails console"
+  # docker compose run --rm web bin/rails console
   web: &base
     build:
       context: .
@@ -34,8 +33,9 @@ services:
       bash -lc "
         bundle config set frozen false &&
         bundle install --jobs=4 &&
-        bin/rails db:setup &&
-        bin/dev
+        bin/rails db:create &&
+        bin/rails db:migrate &&
+        bin/rails server -b 0.0.0.0 -p 3000
       "
 
   # Run tests
@@ -46,12 +46,14 @@ services:
     <<: *base
     environment:
       RAILS_ENV: test
-      CURRENCY_API_KEY: "${CURRENCY_API_KEY:-}"
+      CURRENCY_API_KEY: "test-key"
+      JWT_SECRET: "test-secret"
     command: >
       bash -lc "
         bundle config set frozen false &&
         bundle install --jobs=4 &&
-        bin/rails db:setup &&
+        bin/rails db:create &&
+        bin/rails db:migrate &&
         bundle exec rspec --format documentation
       "
 
