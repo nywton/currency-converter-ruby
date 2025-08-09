@@ -297,6 +297,95 @@ curl -X POST http://localhost:3000/api/v1/session \
 
 ---
 
+## Transactions API
+
+Create a new transaction record.
+
+### Endpoint
+
+```
+POST api/v1/transactions
+```
+
+### Example Request with cURL
+
+```bash
+curl -X POST http://localhost:3000/api/v1/transactions \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "transaction": {
+          "from_currency": "USD",
+          "to_currency":   "BRL",
+          "from_value": 100
+        }
+      }'
+```
+
+### Request Details
+
+* **URL:** `http://localhost:3000/api/v1/transactions`
+* **Headers:**
+
+  * `Content-Type: application/json`
+* **Body:**
+
+  ```json
+  {
+    "transaction": {
+      "user_id": 123,
+      "from_currency": "USD",
+      "to_currency": "BRL",
+      "from_value": 100,
+      "to_value": 525.32,
+      "rate": 5.2532
+    }
+  }
+  ```
+
+### Successful Response
+
+* **Status:** `201 Created`
+* **Body:**
+
+  ```json
+  {
+    "id": 987,
+    "user_id": 123,
+    "from_currency": "USD",
+    "to_currency": "BRL",
+    "from_value": 100.0,
+    "to_value": 525.32,
+    "rate": 5.2532,
+    "timestamp": "2025-08-08T14:30:45.123Z"
+  }
+  ```
+
+### Error Responses
+
+* **Status:** `422 Unprocessable Entity`
+  **Body:**
+
+  ```json
+  {
+    "errors": [
+      "From currency is not a supported currency code",
+      "Rate must be greater than or equal to 0.0001"
+    ]
+  }
+  ```
+
+* **Status:** `400 Bad Request` (missing wrapper)
+  **Body:**
+
+  ```json
+  {
+    "error": "Missing transaction parameters"
+  }
+  ```
+
+---
+
 ## CLI Usage
 
 * NOTE: Ensure you have `CURRENCY_API_KEY` set in your environment.

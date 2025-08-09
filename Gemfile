@@ -50,7 +50,7 @@ group :development, :test do
   # Use RSpec for testing [https://rspec.info/]
   gem "rspec-rails", "~> 8.0.0"
 
-  gem 'dotenv'
+  gem "dotenv"
 end
 
 group :test do

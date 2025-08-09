@@ -20,7 +20,7 @@ class ExchangeRateProvider
   # @param http_client [#get_response] any object responding to get_response(uri)
   # @param api_key     [String]        your CurrencyAPI key (defaults to ENV)
   def initialize(http_client: Net::HTTP, api_key: nil)
-    @api_key     = api_key || ENV["CURRENCY_API_KEY"] || raise("CURRENCY_API_KEY must be set")
+    @api_key     = api_key || raise("CURRENCY_API_KEY must be set")
     @http_client = http_client
   end
 

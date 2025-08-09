@@ -1,9 +1,3 @@
-# frozen_string_literal: true
-
-require 'json'
-require 'uri'
-require_relative '../../lib/exchange_rate_provider'
-
 RSpec.describe ExchangeRateProvider do
   # oficial docs: https://currencyapi.com/docs/latest#latest-currency-exchange-data
   let(:fixture_path) do
