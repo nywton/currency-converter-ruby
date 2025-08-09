@@ -1,9 +1,9 @@
 require 'rails_helper'
 
-RSpec.describe Api::V1::TransactionsController, type: :request do
+RSpec.describe TransactionsController, type: :request do
   let!(:user)   { create(:user) }
   let(:headers) { auth_headers_for(user) }
-  let(:url)     { api_v1_transactions_path }
+  let(:url)     { transactions_path }
 
   let(:valid_attributes) do
     {

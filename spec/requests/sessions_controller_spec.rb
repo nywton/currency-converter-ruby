@@ -1,10 +1,10 @@
 require "rails_helper"
 require "jwt"
 
-RSpec.describe Api::V1::SessionsController, type: :request do
+RSpec.describe SessionsController, type: :request do
   let(:jwt_secret) { "test_secret" }
   let(:user)       { instance_double(User, id: 42) }
-  let(:url)        { api_v1_session_path }
+  let(:url)        { session_path }
 
   before do
     allow(ENV).to receive(:fetch).with("JWT_SECRET").and_return(jwt_secret)

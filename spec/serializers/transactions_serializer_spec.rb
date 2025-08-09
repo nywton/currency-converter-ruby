@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe Api::V1::TransactionsSerializer do
+RSpec.describe TransactionsSerializer do
   let(:transaction) do
     create(:transaction,
       from_currency: "USD",
@@ -21,9 +21,9 @@ RSpec.describe Api::V1::TransactionsSerializer do
     end
 
     it "renders numeric fields as numbers with expected scales" do
-      expect(json[:from_value]).to eq(100.0)   # 2 scale
-      expect(json[:to_value]).to eq(550.0)     # 2 scale
-      expect(json[:rate]).to eq(5.5)           # 4 -> becomes 5.5 as float
+      expect(json[:from_value]).to eq(100.0)
+      expect(json[:to_value]).to eq(550.0)
+      expect(json[:rate]).to eq(5.5)
       expect(json[:from_value]).to be_a(Float)
       expect(json[:to_value]).to be_a(Float)
       expect(json[:rate]).to be_a(Float)
