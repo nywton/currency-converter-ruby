@@ -50,9 +50,11 @@ group :development, :test do
   # Use RSpec for testing [https://rspec.info/]
   gem "rspec-rails", "~> 8.0.0"
 
-  gem "guard-rspec", require: false
+  gem 'dotenv'
+end
 
-  gem "factory_bot_rails"
-
+group :test do
   gem "faker"
+  gem "factory_bot_rails"
+  gem "guard-rspec", require: false
 end
