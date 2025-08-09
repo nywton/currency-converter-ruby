@@ -44,7 +44,7 @@ module Authentication
   end
 
   def jwt_secret
-    ENV.fetch("JWT_SECRET")
+    Rails.configuration.x.jwt_secret
   end
 
   def render_unauthorized

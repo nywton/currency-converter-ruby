@@ -11,10 +11,6 @@ RSpec.describe Authentication, type: :controller do
   let(:secret_key) { "test_secret" }
   let(:user) { instance_double("User", id: 123) }
 
-  before do
-    allow(ENV).to receive(:fetch).with("JWT_SECRET").and_return(secret_key)
-  end
-
   describe "before_action :require_authentication" do
     context "when no Authorization header" do
       it "responds with 401 Unauthorized" do
@@ -96,13 +92,8 @@ RSpec.describe Authentication, type: :controller do
   end
 
   describe "#jwt_secret" do
-    it "returns the SECRET_KEY_BASE from ENV" do
+    it "returns the Rails secret from x.jwt_secret" do
       expect(controller.send(:jwt_secret)).to eq(secret_key)
-    end
-
-    it "raises if env key missing" do
-      allow(ENV).to receive(:fetch).and_raise(KeyError)
-      expect { controller.send(:jwt_secret) }.to raise_error(KeyError)
     end
   end
 
