@@ -11,7 +11,23 @@ module Transactions
     end
 
     def commit_with(usd_rates)
-      converted = RateConverter.new(usd_rates).convert(@from_value, base: @from_currency, target: @to_currency)
+      begin
+        converted = RateConverter.new(usd_rates).convert(
+          @from_value,
+          base:   @from_currency,
+          target: @to_currency
+        )
+      rescue ArgumentError => e
+        case e.message
+        when /Unknown base currency/i
+          errors << "From currency #{@from_currency} is not a supported currency code"
+        when /Unknown target currency/i
+          errors << "To currency #{@to_currency} is not a supported currency code"
+        else
+          errors << e.message
+        end
+        return self
+      end
 
       @transaction = Transaction.new(
         user_id:       @user_id,
@@ -22,10 +38,7 @@ module Transactions
         rate:          converted[:rate]
       )
 
-      unless transaction.save
-        errors.concat(transaction.errors.full_messages)
-      end
-
+      errors.concat(transaction.errors.full_messages) unless transaction.save
       self
     end
 
