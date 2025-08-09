@@ -33,6 +33,74 @@ Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/) intend to solve
 
 ---
 
+Here’s a shorter, more natural version of your architecture summary:
+
+---
+
+## **Key Architectural Decisions**
+
+### **1. API-first with thin controllers**
+
+* `Api::V1::TransactionsController` mainly orchestrates: delegates logic to services/concerns and returns JSON.
+* **Trade-off:** more files, but clear separation of responsibilities.
+
+### **2. Explicit domain service objects**
+
+* `Transactions::Create` encapsulates the use case (convert, persist, handle errors).
+* **Benefit:** high testability, isolated business logic;.
+
+### **3. External API integration encapsulation**
+
+* `ExchangeRateProvider` isolates the CurrencyAPI HTTP call and parsing.
+* **Benefit:** easy mocking in tests; single point for timeouts/retries/logging.
+
+### **4. Decoupling conversion logic from API integration**
+
+* A dedicated converter (`ExchangeRateConverter` or equivalent) computes amounts/rates from given data.
+* **Benefit:** conversion rules are independent from the data source.
+
+### **5. Edge caching inside the app**
+
+* `Rails.cache.fetch` with semantic keys (`exchange_rates:*`) and **end-of-day (EoD)** expiration.
+* **Benefit:** reduces latency and API cost; avoids rate limits. Helps with **unlimited conversions**.
+* Infra: **Solid Cache** (via `solid_cache_entries` table) in dev/prod.
+
+### **6. Stateless JWT authentication**
+
+* `before_action :require_authentication`, `current_user` resolved via token (secret in `Rails.configuration.x.jwt_secret`).
+* **Benefit:** scales horizontally without session storage; works with mobile/web clients.
+* **Config choice:** secret comes from **credentials/ENV** (12-factor compliant).
+
+### **7. Monetary precision and validations**
+
+* Use of `BigDecimal` and strict validations on value ranges/scale in `Transaction` (+ rounding).
+* **Benefit:** accounting consistency; avoids floating-point errors.
+
+### **8. Cross-controller concerns**
+
+* `ExchangeRates` controller concern to expose `latest_exchange_rates` as a helper method.
+* **Benefit:** reusable logic across controllers/views; avoids bloated controllers.
+
+### **9. Comprehensive test coverage**
+
+* Request specs (status/JSON), model specs (validations/precision), service specs (flow and error handling), and authentication helpers (JWT in tests).
+* **Benefit:** safer refactoring; serves as living documentation of contracts.
+
+### **10. Dedicated operational tasks**
+
+* Rake tasks for transaction creation/seeding and related routines.
+* **Benefit:** automation of repetitive or offline jobs; separates operational workflows from web traffic.
+
+### **RateConverter – USD-based currency conversion**
+
+* Converts amounts between any two currencies using USD-anchored rates.
+* **Benefit:** Pure, reusable logic independent from API or caching, easy to test and swap data sources. Permits conversion of any currency from any currency.
+
+## **Risks / Next Steps**
+
+* Centralize **error handling and timeouts** in `ExchangeRateProvider` (consider circuit breaker/retry with jitter).
+
+---
 
 ## Currency Amount Limits
 
