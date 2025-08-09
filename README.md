@@ -19,6 +19,7 @@ Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/) intend to solve
 ---
 ## Table of Contents
 
+- [Key Architectural Decisions](#key-architectural-decisions)
 - [Currency Amount Limits](#currency-amount-limits)
 - [Prerequisites](#prerequisites)
 - [Configuration](#configuration)
@@ -26,14 +27,11 @@ Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/) intend to solve
 - [Running](#running)
 - [Testing](#testing)
 - [Session API](#session-api)
+- [Transactions API](#transactions-api)
 - [CLI Usage](#cli-usage)
   - [Fetching Rates from CurrencyAPI](#fetching-rates-from-currencyapi)
   - [Converting amounts](#converting-amounts)
 - [ChangeLog](#changelog)
-
----
-
-Here’s a shorter, more natural version of your architecture summary:
 
 ---
 
@@ -130,28 +128,28 @@ Your `from_value` and `to_value` columns are now `decimal(18,2)` (16 integer dig
 
 1. Clone this repository or copy the `lib/exchange_rate_provider.rb` file into your project:
 
-   ```bash
-    git clone https://github.com/nywton/currency-converter-ruby
-    cd currency-converter-ruby
-   
-    # checkout to the branch
-    git checkout nywton_barros
-   ```
+```bash
+ git clone https://github.com/nywton/currency-converter-ruby
+ cd currency-converter-ruby
+
+ # checkout to the branch
+ git checkout nywton_barros
+```
 
 2. Copy the example environment file
 
 First, make a copy of the sample env file:
 
-   ```bash
-   cp sample.env .env
-   ````
+```bash
+cp sample.env .env
+````
 
 3. Visit the CurrencyAPI dashboard to retrieve your API key:
 
-   ```bash
-    # Open in browser:
-    https://app.currencyapi.com/dashboard
-   ```
+```bash
+ # Open in browser:
+ https://app.currencyapi.com/dashboard
+```
 
 Then open the newly created `.env` in your editor and set your `CURRENCY_API_KEY`:
 
@@ -178,88 +176,88 @@ CURRENCY_API_KEY="your_actual_currencyapi_key_here"
 
 Spin up the app inside Docker (no local Ruby install needed):
 
-   ```bash
-   # Build the image
-   docker compose build
-   
-   # Start the app container and run migrations
-   docker compose up web
-   
-   # Run migrations (optional since the app is already running)
-   docker compose exec web bin/rails db:setup
+```bash
+# Build the image
+docker compose build
 
-   ```
+# Start the app container and run migrations
+docker compose up web
+
+# Run migrations (optional since the app is already running)
+docker compose exec web bin/rails db:setup
+
+```
 
 3. Local setup:
 
  Ensure you have `CURRENCY_API_KEY` and `JWT_SECRET` set in your environment:
 
-   ```bash
-   # Install dependencies
-   gem install bundler && bundle install --jobs 4
-   
-   # Run create sqlite and run migrations (manually)
-   bin/rails db:setup
+```bash
+# Install dependencies
+gem install bundler && bundle install --jobs 4
 
-   # Run tests
-   bundle exec rspec
-   ```
+# Run create sqlite and run migrations (manually)
+bin/rails db:setup
+
+# Run tests
+bundle exec rspec
+```
 ---
 
 ## Running
 
 1. Docker:
 
-   ```bash
-   # Build the image
-   docker compose up web
+```bash
+# Build the image
+docker compose up web
 
-   # Run tests environment (bundle exec rspec)
-   docker compose run --rm test
-   
-   # Stop the app container
-   docker compose down
-   ```
+# Run tests environment (bundle exec rspec)
+docker compose run --rm test
+
+# Stop the app container
+docker compose down
+```
 2. Local:
 
-   ```bash
-   bin/rails server -b 0.0.0.0 -p 3000
-   ```
+```bash
+bin/rails server -b 0.0.0.0 -p 3000
+```
 
 3. Useful Docker commands:
 
-   ```bash
-   # 1. Build the image
-   docker compose build
-   # (optional) Build from scratch (no cache)
-   docker compose build --no-cache
-   
-   # 2. Run migrations and seeds
-   docker compose exec web bin/rails db:setup
-   # (optional) if there are no running containers
-   docker compose run --rm web bin/rails db:setup
-   
-   # 3. Run tests
-   # Run rspec --format documentation
-   docker compose run --rm test
-   # (optional) Run rspec without formatting
-   docker compose run --rm test bundle exec rspec
-   # (optional) Guard rspec
-   docker compose run --rm test bundle exec guard
-   
-   # 4. Run rails server
-   docker compose up web --remove-orphans
-   
-   # 5. Run rails console
-   docker compose exec web bin/rails console
-   # (optional) if there are no running containers
-   docker compose run --rm web bin/rails console
-   
-   # 6. Stop the containers
-   docker compose down
-   # (optional) Stop & remove containers, networks, volumes and images
-   docker compose down --rmi all --volumes --remove-orphans   
-   ```
+```bash
+# 1. Build the image
+docker compose build
+# (optional) Build from scratch (no cache)
+docker compose build --no-cache
+
+# 2. Run migrations and seeds
+docker compose exec web bin/rails db:setup
+# (optional) if there are no running containers
+docker compose run --rm web bin/rails db:setup
+
+# 3. Run tests
+# Run rspec --format documentation
+docker compose run --rm test
+# (optional) Run rspec without formatting
+docker compose run --rm test bundle exec rspec
+# (optional) Guard rspec
+docker compose run --rm test bundle exec guard
+
+# 4. Run rails server
+docker compose up web --remove-orphans
+
+# 5. Run rails console
+docker compose exec web bin/rails console
+# (optional) if there are no running containers
+docker compose run --rm web bin/rails console
+
+# 6. Stop the containers
+docker compose down
+# (optional) Stop & remove containers, networks, volumes and images
+docker compose down --rmi all --volumes --remove-orphans   
+```
 
 ---
 
@@ -271,28 +269,28 @@ Run the full test suite:
 
 1. Docker:
 
-   ```bash
-   # rspec --format documentation
-   docker compose run --rm test
+```bash
+# rspec --format documentation
+docker compose run --rm test
 
-   # bundle exec rspec
-   docker compose run --rm test bundle exec rspec
+# bundle exec rspec
+docker compose run --rm test bundle exec rspec
 
-   # bundle exec guard
-   docker compose run --rm test bundle exec guard
-   ```
+# bundle exec guard
+docker compose run --rm test bundle exec guard
+```
 
 2. Local:
 
-   ```bash
-   bundle exec rspec --format documentation
-   ```
+```bash
+bundle exec rspec --format documentation
+```
 
 Or if you want run guard:
 
-   ```bash
-   bundle exec guard
-   ```
+```bash
+bundle exec guard
+```
 
 A sample spec file lives at `spec/lib/fixtures/requests/currencyapi/get_latest_currency.json`, representing the response from the CurrencyAPI.
 
@@ -304,20 +302,20 @@ Authenticate a user and obtain a JSON Web Token (JWT) for subsequent requests.
 ### Endpoint
 
 ```
-POST api/v1/session
+POST /session
 ```
 
 ### Example Request with cURL
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/session \
+curl -X POST http://localhost:3000/session \
   -H "Content-Type: application/json" \
   -d '{"email_address":"jane@example.com","password":"secret"}'
 ```
 
 ### Request Details
 
-* **URL:** `http://localhost:3000/api/v1/session`
+* **URL:** `http://localhost:3000/session`
 * **Headers:**
 
   * `Content-Type: application/json`
@@ -372,7 +370,7 @@ Create a new transaction record.
 ### Endpoint
 
 ```
-POST api/v1/transactions
+POST /transactions
 ```
 
 ### Example Request with cURL
@@ -392,7 +390,7 @@ curl -X POST http://localhost:3000/api/v1/transactions \
 
 ### Request Details
 
-* **URL:** `http://localhost:3000/api/v1/transactions`
+* **URL:** `http://localhost:3000/transactions`
 * **Headers:**
 
   * `Content-Type: application/json`
@@ -470,37 +468,37 @@ The ExchangeRateProvider class can be used to fetch exchange rates from Currency
 
 1. Fetch all rates with Docker: (ensure you have `CURRENCY_API_KEY` set in your environment)
 
-   ```bash
-   # Default base is USD
-   docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateProvider.new.latest"
-   # => { "EUR" => 0.92, "BRL" => 5.50, ... }
-   
-   # Fetch specific base and targets:
-   docker compose run --rm web --remove-orphans bin/rails runner "puts ExchangeRateProvider.new.latest(base: 'BRL', targets: ['USD', 'EUR'])"
-   # => {"USD" => 0.1832108847, "EUR" => 0.1570722103}
-   ```
+```bash
+# Default base is USD
+docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateProvider.new.latest"
+# => { "EUR" => 0.92, "BRL" => 5.50, ... }
+
+# Fetch specific base and targets:
+docker compose run --rm web --remove-orphans bin/rails runner "puts ExchangeRateProvider.new.latest(base: 'BRL', targets: ['USD', 'EUR'])"
+# => {"USD" => 0.1832108847, "EUR" => 0.1570722103}
+```
 
 2. Fetch all rates with local Ruby:
 
-   ```ruby
-   # in bash
-   $ irb -r ./lib/exchange_rate_provider
-   
-   # in irb
-   # 1. Instantiate the provider (uses Net::HTTP by default):
-   provider = ExchangeRateProvider.new
-   
-   # 2. Fetch all rates (base USD):
-   rates = provider.latest
-   # => { "EUR" => 0.92, "BRL" => 5.50, ... }
-   
-   # 3. Fetch usd rates for specific targets:
-   brl_rate = provider.latest(targets: 'BRL')
-   # => { "BRL" => 5.50 }
-   # 4. Fetch specific base and targets: (BRL/USD, BRL/EUR)
-   provider.latest(base: 'BRL', targets: ['USD', 'EUR'])
-   #=> {"EUR" => 0.1569435088, "USD" => 0.1817695646}
-   ```
+```ruby
+# in bash
+$ irb -r ./lib/exchange_rate_provider
+
+# in irb
+# 1. Instantiate the provider (uses Net::HTTP by default):
+provider = ExchangeRateProvider.new
+
+# 2. Fetch all rates (base USD):
+rates = provider.latest
+# => { "EUR" => 0.92, "BRL" => 5.50, ... }
+
+# 3. Fetch usd rates for specific targets:
+brl_rate = provider.latest(targets: 'BRL')
+# => { "BRL" => 5.50 }
+# 4. Fetch specific base and targets: (BRL/USD, BRL/EUR)
+provider.latest(base: 'BRL', targets: ['USD', 'EUR'])
+#=> {"EUR" => 0.1569435088, "USD" => 0.1817695646}
+```
 
 ---
 ### Converting amounts
@@ -513,40 +511,40 @@ The ExchangeRateConverter class can be used to convert amounts using exchange ra
 
 1. Convert amounts with Docker:
 
-   ```bash
-   # Default base is USD. Convert 100 usd to brl:
-   docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'usd', target: 'brl')"
-   # => 550.1471065
-   
-   # Convert specific base and target:
-   docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'brl', target: 'usd')"
-   
-   # Run from fixtures:
-   ```
+```bash
+# Default base is USD. Convert 100 usd to brl:
+docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'usd', target: 'brl')"
+# => 550.1471065
+
+# Convert specific base and target:
+docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'brl', target: 'usd')"
+
+# Run from fixtures:
+```
 
 2. Convert amounts with local Ruby (irb):
 
 this project also provides an `exchange_rate_converter` to perform amount conversions using fetched rates:
 
-   ```ruby
-   
-   # in bash:
-   $ irb
-   
-   # In irb:
-   require_relative 'lib/exchange_rate_provider'
-   require_relative 'lib/exchange_rate_converter'
-   
-   # 1. fetch the current rates:
-   rates = ExchangeRateProvider.new.latest(base: 'usd', targets: %w[usd eur brl jpy])
-   
-   # 2. instantiate the converter with the rates:
-   converter = ExchangeRateConverter.new(rates)
-   
-   # 3. convert 100 usd to brl:
-   amount_in_brl = converter.convert(100, base: 'usd', target: 'brl')
-   # => 550.1471065
-   ```
+```ruby
+
+# in bash:
+$ irb
+
+# In irb:
+require_relative 'lib/exchange_rate_provider'
+require_relative 'lib/exchange_rate_converter'
+
+# 1. fetch the current rates:
+rates = ExchangeRateProvider.new.latest(base: 'usd', targets: %w[usd eur brl jpy])
+
+# 2. instantiate the converter with the rates:
+converter = ExchangeRateConverter.new(rates)
+
+# 3. convert 100 usd to brl:
+amount_in_brl = converter.convert(100, base: 'usd', target: 'brl')
+# => 550.1471065
+```
 ---
 
 ## ChangeLog
