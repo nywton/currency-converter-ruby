@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe TransactionsController, type: :request do
+RSpec.describe CreateTransactionsController, type: :request do
   let!(:user)   { create(:user) }
   let(:headers) { auth_headers_for(user) }
   let(:url)     { transactions_path }

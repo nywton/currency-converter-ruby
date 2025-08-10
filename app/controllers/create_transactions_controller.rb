@@ -1,4 +1,4 @@
-class TransactionsController < ApplicationController
+class CreateTransactionsController < ApplicationController
   include ExchangeRates
 
   rescue_from ActionController::ParameterMissing, with: :render_bad_request
@@ -6,7 +6,11 @@ class TransactionsController < ApplicationController
   # POST /transactions
   def create
     service = build_service.commit_with(latest_usd_rates)
-    render_service(service)
+    if service.success?
+      render json: TransactionsSerializer.new(service.transaction), status: :created
+    else
+      render json: { errors: service.errors }, status: :unprocessable_content
+    end
   end
 
   private
@@ -22,14 +26,6 @@ class TransactionsController < ApplicationController
       .to_h
       .symbolize_keys
       .merge(user_id: current_user.id)
-  end
-
-  def render_service(service)
-    if service.success?
-      render json: TransactionsSerializer.new(service.transaction), status: :created
-    else
-      render json: { errors: service.errors }, status: :unprocessable_content
-    end
   end
 
   def render_bad_request(exception)
