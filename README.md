@@ -103,7 +103,7 @@ docker compose run --rm web bin/rails secret
 
 ## Quickstart
 
-Ensure you have `CURRENCY_API_KEY` and `JWT_SECRET` set in your `.env` file. (see [Configuration](#configuration))
+Ensure you have `CURRENCY_API_KEY` and `JWT_SECRET` set in your `.env` file. (see [Configuration 3.](#3-visit-the-currencyapi-dashboard-to-retrieve-your-api-key))
 
 1. Run application locally and populate the database
 
