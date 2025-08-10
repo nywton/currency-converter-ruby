@@ -17,6 +17,9 @@ services:
       - .:/rails
       - sqlite_data:/rails/storage
     working_dir: /rails
+    mem_limit: "512m"
+    memswap_limit: "512m"
+    cpus: "0.5"
     environment:
       CURRENCY_API_KEY: "${CURRENCY_API_KEY:-}"
       JWT_SECRET: "${JWT_SECRET:-}"
