@@ -65,7 +65,7 @@ First, make a copy of the sample env file:
 ```bash
 cp sample.env .env
 ````
-3. Visit the CurrencyAPI dashboard to retrieve your API key:
+#### 3. Visit the CurrencyAPI dashboard to retrieve your API key:
 
 ```bash
  # Open in browser:
@@ -103,6 +103,8 @@ docker compose run --rm web bin/rails secret
 
 ## Quickstart
 
+Ensure you have `CURRENCY_API_KEY` and `JWT_SECRET` set in your `.env` file. (see [Configuration](#configuration))
+
 1. Run application locally and populate the database
 
 ```bash
@@ -115,7 +117,7 @@ docker compose up web
 # Creates `test user` and transactions for quick testing
 docker compose exec web bin/rails db:seed
 ```
-2. Get the Authorization `token` for `test user`. Ensure you have `JWT_SECRET` set in your environment.
+2. Get the Authorization `token` for `test user`.
 
 ```bash
 curl -X POST http://localhost:3000/session \
@@ -130,7 +132,7 @@ curl -X POST http://localhost:3000/session \
 
 4. Use the `token` to make requests to the API
 
-Create a transaction. (Ensure you have `CURRENCY_API_KEY` set in your environment)
+Create a transaction.
 
 ```bash
 curl -X GET http://localhost:3000/transactions \
