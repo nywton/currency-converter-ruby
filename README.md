@@ -14,119 +14,41 @@ A lightweight Rails app that fetches exchange rates from [CurrencyAPI](https://c
 🔗 [Full currency list](https://currencyapi.com/docs/currency-list)
 
 ---
-Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/) intend to solve the challenge of currency conversion described in [INTRUCTIONS.md](./INSTRUCTIONS.md) file.
+Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/) intend to solve the challenge of currency conversion described in [INSTRUCTIONS.md](./INSTRUCTIONS.md) file.
 
 ---
 ## Table of Contents
 
-- [Key Architectural Decisions](#key-architectural-decisions)
-- [Currency Amount Limits](#currency-amount-limits)
 - [Prerequisites](#prerequisites)
 - [Configuration](#configuration)
+- [Quickstart](#quickstart)
 - [Installation](#installation)
-- [Running](#running)
 - [Testing](#testing)
+- [Useful Docker Commands](#useful-docker-commands)
 - [Session API](#session-api)
+  - [Create Session](#creating-session)
 - [Transactions API](#transactions-api)
+  - [Create Transaction](#creating-transaction)
 - [CLI Usage](#cli-usage)
   - [Fetching Rates from CurrencyAPI](#fetching-rates-from-currencyapi)
   - [Converting amounts](#converting-amounts)
+- [Key Architectural Decisions](#key-architectural-decisions)
+- [Currency Amount Limits](#currency-amount-limits)
 - [ChangeLog](#changelog)
-
----
-
-## **Key Architectural Decisions**
-
-### **1. API-first with thin controllers**
-
-* `Api::V1::TransactionsController` mainly orchestrates: delegates logic to services/concerns and returns JSON.
-* **Trade-off:** more files, but clear separation of responsibilities.
-
-### **2. Explicit domain service objects**
-
-* `Transactions::Create` encapsulates the use case (convert, persist, handle errors).
-* **Benefit:** high testability, isolated business logic;.
-
-### **3. External API integration encapsulation**
-
-* `ExchangeRateProvider` isolates the CurrencyAPI HTTP call and parsing.
-* **Benefit:** easy mocking in tests; single point for timeouts/retries/logging.
-
-### **4. Decoupling conversion logic from API integration**
-
-* A dedicated converter (`ExchangeRateConverter` or equivalent) computes amounts/rates from given data.
-* **Benefit:** conversion rules are independent from the data source.
-
-### **5. Edge caching inside the app**
-
-* `Rails.cache.fetch` with semantic keys (`exchange_rates:*`) and **end-of-day (EoD)** expiration.
-* **Benefit:** reduces latency and API cost; avoids rate limits. Helps with **unlimited conversions**.
-* Infra: **Solid Cache** (via `solid_cache_entries` table) in dev/prod.
-
-### **6. Stateless JWT authentication**
-
-* `before_action :require_authentication`, `current_user` resolved via token (secret in `Rails.configuration.x.jwt_secret`).
-* **Benefit:** scales horizontally without session storage; works with mobile/web clients.
-* **Config choice:** secret comes from **credentials/ENV** (12-factor compliant).
-
-### **7. Monetary precision and validations**
-
-* Use of `BigDecimal` and strict validations on value ranges/scale in `Transaction` (+ rounding).
-* **Benefit:** accounting consistency; avoids floating-point errors.
-
-### **8. Cross-controller concerns**
-
-* `ExchangeRates` controller concern to expose `latest_exchange_rates` as a helper method.
-* **Benefit:** reusable logic across controllers/views; avoids bloated controllers.
-
-### **9. Comprehensive test coverage**
-
-* Request specs (status/JSON), model specs (validations/precision), service specs (flow and error handling), and authentication helpers (JWT in tests).
-* **Benefit:** safer refactoring; serves as living documentation of contracts.
-
-### **10. Dedicated operational tasks**
-
-* Rake tasks for transaction creation/seeding and related routines.
-* **Benefit:** automation of repetitive or offline jobs; separates operational workflows from web traffic.
-
-### **RateConverter – USD-based currency conversion**
-
-* Converts amounts between any two currencies using USD-anchored rates.
-* **Benefit:** Pure, reusable logic independent from API or caching, easy to test and swap data sources. Permits conversion of any currency from any currency.
-
-## **Risks / Next Steps**
-
-* Centralize **error handling and timeouts** in `ExchangeRateProvider` (consider circuit breaker/retry with jitter).
-
----
-
-## Currency Amount Limits
-
-Your `from_value` and `to_value` columns are now `decimal(18,2)` (16 integer digits, 2 fractional). Here’s what the extremes look like in a few common currencies:
-
-| Currency         | Symbol | Maximum Value              | Minimum Value              |
-|------------------|--------|----------------------------|----------------------------|
-| US Dollar        | \$     | \$9 999 999 999 999 999.99  | -\$9 999 999 999 999 999.99 |
-| Euro             | €      | €9 999 999 999 999 999.99   | -€9 999 999 999 999 999.99  |
-| Japanese Yen     | ¥      | ¥9 999 999 999 999 999.99   | -¥9 999 999 999 999 999.99  |
-| Brazilian Real   | R\$    | R\$9 999 999 999 999 999.99 | -R\$9 999 999 999 999 999.99 |
-
-> **Note:**  
-> - All `from_value`/`to_value` entries must fall within ±9 999 999 999 999 999.99.  
-> - The `rate` column remains `decimal(18,4)` (14 integer digits, 4 fractional), so its range is 0.0001…99 999 999 999 999.9999.  
 
 ---
 
 ## Prerequisites
 
 * Ruby 3.x
+* Docker and Compose
 * A CurrencyAPI account (signup at [https://app.currencyapi.com](https://app.currencyapi.com))
 * Your API key from the CurrencyAPI dashboard
 
 ---
 ## Configuration
 
-1. Clone this repository or copy the `lib/exchange_rate_provider.rb` file into your project:
+1. Clone this repository:
 
 ```bash
  git clone https://github.com/nywton/currency-converter-ruby
@@ -143,7 +65,6 @@ First, make a copy of the sample env file:
 ```bash
 cp sample.env .env
 ````
-
 3. Visit the CurrencyAPI dashboard to retrieve your API key:
 
 ```bash
@@ -151,26 +72,85 @@ cp sample.env .env
  https://app.currencyapi.com/dashboard
 ```
 
-Then open the newly created `.env` in your editor and set your `CURRENCY_API_KEY`:
+Then open the newly created `.env` in your editor and set your `CURRENCY_API_KEY` and `JWT_SECRET` variables:
+
 
 ```dotenv
-CURRENCY_API_KEY="your_actual_currencyapi_key_here"
+export CURRENCY_API_KEY="your_actual_currencyapi_key_here"
+export JWT_SECRET_KEY="your_actual_jwt_secret_key_here"
 ```
 
-4. (optional) Export your API key as an environment variable for local development:
+NOTE: For local development you can generate a random key using `openssl rand -hex 64` or `bin/rails secret`
 
-  ```bash
-  export CURRENCY_API_KEY="your_actual_currencyapi_key_here"
-  export JWT_SECRET_KEY="your_actual_jwt_secret_key_here"
-  ```
+
+```bash
+openssl rand -hex 64
+
+# With rails locally
+bin/rails secret
+
+# With docker
+docker compose build
+docker compose run --rm web bin/rails secret
+```
 ---
 
-**NOTE:** Currency API currently has limited free api calls. I will improve this by adding a cache layer to make possible unlimited rate convertions in a day.
+**NOTE:** Currency API currently has limited free api calls. Visit [https://currencyapi.com/pricing](https://currencyapi.com/pricing) for more information.
 
 <img width="1351" height="405" alt="image" src="https://github.com/user-attachments/assets/4a94071e-c74b-4715-9782-71102d270682" />
 
+---
 
-## Installation
+## Quickstart
+
+1. Run application locally and populate the database
+
+```bash
+# Build the containers
+docker compose build
+
+# Run the web server
+docker compose up web
+
+# Creates `test user` and transactions for quick testing
+docker compose exec web bin/rails db:seed
+```
+2. Get the Authorization `token` for `test user`. Ensure you have `JWT_SECRET` set in your environment.
+
+```bash
+curl -X POST http://localhost:3000/session \
+  -H "Content-Type: application/json" \
+  -d '{"email_address":"user@example.com","password":"supersecret"}'
+```
+
+3. That will return:
+```json
+{"token":"eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3NTQ3MDEzNzR9.CfwA_v65OXetxtoooW9Ewa-2DAIS9CtwHdmtgfthX_I"}
+```
+
+4. Use the `token` to make requests to the API
+
+Create a transaction. (Ensure you have `CURRENCY_API_KEY` set in your environment)
+
+```bash
+curl -X GET http://localhost:3000/transactions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3NTQ3MDEzNzR9.CfwA_v65OXetxtoooW9Ewa-2DAIS9CtwHdmtgfthX_I" \
+  -d '{"from_currency":"USD","to_currency":"BRL","from_value":100}'
+```
+
+List transactions
+
+```bash
+curl -X GET http://localhost:3000/transactions?user_id=1 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3NTQ3MDEzNzR9.CfwA_v65OXetxtoooW9Ewa-2DAIS9CtwHdmtgfthX_I" \
+```
+---
+
+## Installation and Running Locally
+
+1. Ensure you have `CURRENCY_API_KEY` and `JWT_SECRET` set in your `.env` file.
 
 2. Docker setup:
 
@@ -183,9 +163,11 @@ docker compose build
 # Start the app container and run migrations
 docker compose up web
 
-# Run migrations (optional since the app is already running)
-docker compose exec web bin/rails db:setup
+# (optional) Creates user and transactions for quick testing
+docker compose exec web bin/rails db:seed
 
+# Run tests
+docker compose run --rm test
 ```
 
 3. Local setup:
@@ -197,34 +179,54 @@ docker compose exec web bin/rails db:setup
 gem install bundler && bundle install --jobs 4
 
 # Run create sqlite and run migrations (manually)
-bin/rails db:setup
+bin/rails db:create && bin/rails db:migrate
+
+# (optional) Creates user and transactions for quick testing
+bin/rails db:seed
+
+# Run the app
+bin/dev
 
 # Run tests
 bundle exec rspec
 ```
 ---
 
-## Running
+## Testing
+We use RSpec for unit tests. Ensure you have the `rspec` gem installed:
+
+Run the full test suite:
 
 1. Docker:
 
 ```bash
-# Build the image
-docker compose up web
-
-# Run tests environment (bundle exec rspec)
+# rspec --format documentation
 docker compose run --rm test
 
-# Stop the app container
-docker compose down
+# bundle exec rspec
+docker compose run --rm test bundle exec rspec
+
+# bundle exec guard
+docker compose run --rm test bundle exec guard
 ```
+
 2. Local:
 
 ```bash
-bin/rails server -b 0.0.0.0 -p 3000
+bundle exec rspec --format documentation
 ```
 
-3. Useful Docker commands:
+Or if you want run guard:
+
+```bash
+bundle exec guard
+```
+
+A sample spec file lives at `spec/lib/fixtures/requests/currencyapi/get_latest_currency.json`, representing the response from the CurrencyAPI.
+
+---
+
+## Useful Docker commands:
 
 ```bash
 # 1. Build the image
@@ -258,48 +260,13 @@ docker compose down
 # (optional) Stop & remove containers, networks, volumes and images
 docker compose down --rmi all --volumes --remove-orphans   
 ```
-
 ---
 
-## Testing
-
-We use RSpec for unit tests. Ensure you have the `rspec` gem installed:
-
-Run the full test suite:
-
-1. Docker:
-
-```bash
-# rspec --format documentation
-docker compose run --rm test
-
-# bundle exec rspec
-docker compose run --rm test bundle exec rspec
-
-# bundle exec guard
-docker compose run --rm test bundle exec guard
-```
-
-2. Local:
-
-```bash
-bundle exec rspec --format documentation
-```
-
-Or if you want run guard:
-
-```bash
-bundle exec guard
-```
-
-A sample spec file lives at `spec/lib/fixtures/requests/currencyapi/get_latest_currency.json`, representing the response from the CurrencyAPI.
-
----
 ## Session API
 
 Authenticate a user and obtain a JSON Web Token (JWT) for subsequent requests.
 
-### Endpoint
+### Create Session
 
 ```
 POST /session
@@ -367,7 +334,7 @@ curl -X POST http://localhost:3000/session \
 
 Create a new transaction record.
 
-### Endpoint
+### Create Transaction
 
 ```
 POST /transactions
@@ -394,6 +361,7 @@ curl -X POST http://localhost:3000/api/v1/transactions \
 * **Headers:**
 
   * `Content-Type: application/json`
+  * `Authorization: Bearer <token>`
 * **Body:**
 
   ```json
@@ -416,7 +384,7 @@ curl -X POST http://localhost:3000/api/v1/transactions \
 
   ```json
   {
-    "id": 987,
+    "transaction_id": 987,
     "user_id": 123,
     "from_currency": "USD",
     "to_currency": "BRL",
@@ -429,7 +397,7 @@ curl -X POST http://localhost:3000/api/v1/transactions \
 
 ### Error Responses
 
-* **Status:** `422 Unprocessable Entity`
+* **Status:** `422 Unprocessable Content`
   **Body:**
 
   ```json
@@ -438,15 +406,6 @@ curl -X POST http://localhost:3000/api/v1/transactions \
       "From currency is not a supported currency code",
       "Rate must be greater than or equal to 0.0001"
     ]
-  }
-  ```
-
-* **Status:** `400 Bad Request` (missing wrapper)
-  **Body:**
-
-  ```json
-  {
-    "error": "Missing transaction parameters"
   }
   ```
 
@@ -503,21 +462,21 @@ provider.latest(base: 'BRL', targets: ['USD', 'EUR'])
 ---
 ### Converting amounts
 
-The ExchangeRateConverter class can be used to convert amounts using exchange rates fetched from CurrencyAPI.
+The RateConverter class can be used to convert amounts using exchange rates fetched from CurrencyAPI.
 
 * You can use the `convert` method to convert an amount from one currency to another.
 * It makes possible to cache fetched rates to avoid making repeated requests to CurrencyAPI.
-* The following examples show how to use the ExchangeRateConverter class.
+* The following examples show how to use the RateConverter class.
 
 1. Convert amounts with Docker:
 
 ```bash
 # Default base is USD. Convert 100 usd to brl:
-docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'usd', target: 'brl')"
+docker compose run --rm --remove-orphans web bin/rails runner "puts RateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'usd', target: 'brl')"
 # => 550.1471065
 
 # Convert specific base and target:
-docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'brl', target: 'usd')"
+docker compose run --rm --remove-orphans web bin/rails runner "puts RateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'brl', target: 'usd')"
 
 # Run from fixtures:
 ```
@@ -539,12 +498,95 @@ require_relative 'lib/exchange_rate_converter'
 rates = ExchangeRateProvider.new.latest(base: 'usd', targets: %w[usd eur brl jpy])
 
 # 2. instantiate the converter with the rates:
-converter = ExchangeRateConverter.new(rates)
+converter = RateConverter.new(rates)
 
 # 3. convert 100 usd to brl:
 amount_in_brl = converter.convert(100, base: 'usd', target: 'brl')
 # => 550.1471065
 ```
+---
+
+## Key Architectural Decisions
+
+### **1. API-first with thin controllers**
+
+* `CreateTransactionsController` mainly orchestrates: delegates logic to services/concerns and returns JSON.
+* `ListTransactionsController` mainly orchestrates: call ActiveRecord and returns JSON.
+* **Trade-off:** more files, but clear separation of responsibilities.
+
+### **2. Explicit domain service objects**
+
+* `Transactions::Create` encapsulates the use case (convert, persist, handle errors).
+* **Benefit:** high testability, isolated business logic;.
+
+### **3. External API integration encapsulation**
+
+* `RateProvider` isolates the CurrencyAPI HTTP call and parsing.
+* **Benefit:** easy mocking in tests; single point for timeouts/retries/logging.
+
+### **4. Decoupling conversion logic from API integration**
+
+* A dedicated converter (`RateConverter` or equivalent) computes amounts/rates from given data.
+* **Benefit:** conversion rules are independent from the data source.
+
+### **5. Edge caching inside the app**
+
+* `Rails.cache.fetch` with semantic keys (`exchange_rates:*`) and **end-of-day (EoD)** expiration.
+* **Benefit:** reduces latency and API cost; avoids rate limits. Helps with **unlimited conversions**.
+* Infra: **Solid Cache** (via `solid_cache_entries` table) in dev/prod.
+
+### **6. Stateless JWT authentication**
+
+* `before_action :require_authentication`, `current_user` resolved via token (secret in `Rails.configuration.x.jwt_secret`).
+* **Benefit:** scales horizontally without session storage; works with mobile/web clients.
+* **Config choice:** secret comes from **credentials/ENV** (12-factor compliant).
+
+### **7. Monetary precision and validations**
+
+* Use of `BigDecimal` and strict validations on value ranges/scale in `Transaction` (+ rounding).
+* **Benefit:** accounting consistency; avoids floating-point errors.
+
+### **8. Cross-controller concerns**
+
+* `ExchangeRates` controller concern to expose `latest_exchange_rates` as a helper method.
+* **Benefit:** reusable logic across controllers/views; avoids bloated controllers.
+
+### **9. Comprehensive test coverage**
+
+* Request specs (status/JSON), model specs (validations/precision), service specs (flow and error handling), and authentication helpers (JWT in tests).
+* **Benefit:** safer refactoring; serves as living documentation of contracts.
+
+### **10. Dedicated operational tasks**
+
+* Rake tasks for transaction creation/seeding and related routines.
+* **Benefit:** automation of repetitive or offline jobs; separates operational workflows from web traffic.
+
+### **RateConverter – USD-based currency conversion**
+
+* Converts amounts between any two currencies using USD-anchored rates.
+* **Benefit:** Pure, reusable logic independent from API or caching, easy to test and swap data sources. Permits conversion of any currency from any currency.
+
+## **Risks / Next Steps**
+
+* Centralize **error handling and timeouts** in `ExchangeRateProvider` (consider circuit breaker/retry with jitter).
+
+---
+
+## Currency Amount Limits
+
+Your `from_value` and `to_value` columns are now `decimal(18,2)` (16 integer digits, 2 fractional). Here’s what the extremes look like in a few common currencies:
+
+| Currency         | Symbol | Maximum Value              | Minimum Value              |
+|------------------|--------|----------------------------|----------------------------|
+| US Dollar        | \$     | \$9 999 999 999 999 999.99  | -\$9 999 999 999 999 999.99 |
+| Euro             | €      | €9 999 999 999 999 999.99   | -€9 999 999 999 999 999.99  |
+| Japanese Yen     | ¥      | ¥9 999 999 999 999 999.99   | -¥9 999 999 999 999 999.99  |
+| Brazilian Real   | R\$    | R\$9 999 999 999 999 999.99 | -R\$9 999 999 999 999 999.99 |
+
+> **Note:**  
+> - All `from_value`/`to_value` entries must fall within ±9 999 999 999 999 999.99.  
+> - The `rate` column remains `decimal(18,4)` (14 integer digits, 4 fractional), so its range is 0.0001…99 999 999 999 999.9999.  
+
 ---
 
 ## ChangeLog
