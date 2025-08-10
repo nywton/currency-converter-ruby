@@ -1,154 +1,135 @@
+require "rails_helper"
+
 RSpec.describe ExchangeRateProvider do
-  # oficial docs: https://currencyapi.com/docs/latest#latest-currency-exchange-data
   let(:fixture_path) do
-    File.expand_path('fixtures/requests/currencyapi/get_latest_currency.json', __dir__)
+    File.expand_path("fixtures/requests/currencyapi/get_latest_currency.json", __dir__)
   end
 
   let(:raw_json)    { File.read(fixture_path) }
-  let(:sample_data) { JSON.parse(raw_json)['data'] }
+  let(:sample_data) { JSON.parse(raw_json)["data"] }
 
-  let(:success_response) do
-    instance_double('Net::HTTPResponse',
-                    is_a?: true,
-                    code: '200',
-                    body: raw_json)
+  subject(:provider) { described_class.new(api_key: "dummy-key") }
+
+  let(:http_resp) do
+    ->(code:, body: "") { instance_double("HTTParty::Response", code: code, body: body) }
   end
 
-  let(:http_client) { double('HTTPClient') }
-
-  subject(:provider) do
-    described_class.new(
-      http_client: http_client,
-      api_key: 'dummy-key'
-    )
-  end
-
-  describe '#initialize' do
-    context 'when no api_key passed and ENV unset' do
-      around do |ex|
-        orig = ENV.delete('CURRENCY_API_KEY')
-        ex.run
-        ENV['CURRENCY_API_KEY'] = orig
-      end
-
-      it 'raises if ENV missing' do
-        expect do
-          described_class.new(http_client: http_client)
-        end.to raise_error(RuntimeError, 'CURRENCY_API_KEY must be set')
-      end
+  describe "#initialize" do
+    it "raises if api_key is missing" do
+      expect { described_class.new }.to raise_error(RuntimeError, "CURRENCY_API_KEY must be set")
     end
 
-    context 'when api_key passed explicitly' do
-      it 'uses the provided key and http_client' do
-        inst = described_class.new(http_client: http_client, api_key: 'key123')
-        expect(inst.send(:api_key)).to     eq('key123')
-        expect(inst.send(:http_client)).to eq(http_client)
-      end
+    it "accepts an explicit api_key" do
+      inst = described_class.new(api_key: "key123")
+      expect(inst).to be_a(ExchangeRateProvider)
     end
   end
 
-  describe '#latest' do
-    before { allow(http_client).to receive(:get_response).and_return(success_response) }
+  describe "#latest" do
+    before do
+      allow(described_class).to receive(:get).and_return(http_resp.call(code: 200, body: raw_json))
+    end
 
-    it 'builds correct URI without optional params' do
-      expect(http_client).to receive(:get_response) do |uri|
-        params = URI.decode_www_form(uri.query).to_h
-        expect(params['apikey']).to        eq('dummy-key')
-        expect(params['base_currency']).to eq('USD')
-        expect(params).not_to have_key('currencies')
-        success_response
+    it "calls HTTParty.get with the correct path and base params" do
+      expect(described_class).to receive(:get)
+        .with("/v3/latest", query: hash_including(apikey: "dummy-key", base_currency: "USD"))
+        .and_return(http_resp.call(code: 200, body: raw_json))
+
+      provider.latest
+    end
+
+    it "does not include currencies when targets is nil" do
+      expect(described_class).to receive(:get) do |path, opts|
+        expect(path).to eq("/v3/latest")
+        expect(opts[:query]).to include(apikey: "dummy-key", base_currency: "USD")
+        expect(opts[:query]).not_to have_key(:currencies)
+        http_resp.call(code: 200, body: raw_json)
       end
       provider.latest
     end
 
-    it 'parses all rates' do
-      expected = sample_data.transform_values { |h| h['value'] }
+    it "adds currencies when targets is a string" do
+      expect(described_class).to receive(:get) do |path, opts|
+        expect(path).to eq("/v3/latest")
+        expect(opts[:query][:currencies]).to eq("BRL")
+        http_resp.call(code: 200, body: raw_json)
+      end
+      provider.latest(targets: "BRL")
+    end
+
+    it "adds currencies when targets is an array" do
+      expect(described_class).to receive(:get) do |path, opts|
+        expect(path).to eq("/v3/latest")
+        expect(opts[:query][:currencies]).to eq("EUR,USD")
+        http_resp.call(code: 200, body: raw_json)
+      end
+      provider.latest(targets: %w[EUR USD])
+    end
+
+    it "parses and returns all rates" do
+      expected = sample_data.transform_values { |h| h["value"] }
       expect(provider.latest).to eq(expected)
     end
 
-    it 'filters by targets (string)' do
-      expect(provider.latest(targets: 'BRL')).to eq(
-        'BRL' => sample_data['BRL']['value']
+    it "is case-insensitive for base & targets and filters correctly" do
+      allow(described_class).to receive(:get).and_return(http_resp.call(code: 200, body: raw_json))
+      result = provider.latest(base: "eur", targets: %w[usd brl])
+      expect(result).to include(
+        "USD" => sample_data["USD"]["value"],
+        "BRL" => sample_data["BRL"]["value"]
       )
     end
 
-    it 'filters by targets (array)' do
-      expect(provider.latest(targets: %w[EUR USD])).to eq(
-        'EUR' => sample_data['EUR']['value'],
-        'USD' => sample_data['USD']['value']
-      )
-    end
-
-    it 'is case-insensitive for base & targets' do
-      expect(provider.latest(base: 'eur', targets: %w[usd brl])).to include(
-        'USD' => sample_data['USD']['value'],
-        'BRL' => sample_data['BRL']['value']
-      )
-    end
-
-    context 'when HTTP errors occur' do
-      shared_examples 'http error' do |code, expected_message, body = nil|
-        let(:resp) do
-          instance_double('Net::HTTPResponse',
-                          is_a?: false,
-                          code: code.to_s,
-                          message: 'Ignored',
-                          body: body)
-        end
-        before { allow(http_client).to receive(:get_response).and_return(resp) }
-
-        it "raises for HTTP #{code}" do
-          expect { provider.latest }
-            .to raise_error(RuntimeError, expected_message)
+    context "HTTP errors" do
+      shared_examples "http error" do |code, message, body = ""|
+        it "raises for #{code}" do
+          allow(described_class).to receive(:get).and_return(http_resp.call(code: code, body: body))
+          expect { provider.latest }.to raise_error(RuntimeError, message)
         end
       end
 
-      it_behaves_like 'http error', 403,
-                      'Forbidden: you are not allowed to use this endpoint, please upgrade your plan'
-      it_behaves_like 'http error', 404,
-                      'Endpoint not found'
+      include_examples "http error", 403,
+        "Forbidden: you are not allowed to use this endpoint, please upgrade your plan"
 
-      context '422 with JSON error body' do
-        it_behaves_like 'http error',
-                        422,
-                        'Validation error (): Currency ABC is invalid',
-                        {
-                          'error' => {
-                            'message' => 'Currency ABC is invalid'
-                          }
-                        }.to_json
+      include_examples "http error", 404, "Endpoint not found"
+
+      include_examples "http error", 422,
+        "Validation error (): Currency ABC is invalid",
+        { "error" => { "message" => "Currency ABC is invalid" } }.to_json
+
+      include_examples "http error", 429,
+        "Rate limit exceeded, please upgrade your plan"
+
+      it "falls back to generic message for unexpected codes" do
+        allow(described_class).to receive(:get).and_return(http_resp.call(code: 418, body: ""))
+        expect { provider.latest }.to raise_error(RuntimeError, "HTTP error 418")
       end
 
-      it_behaves_like 'http error', 429,
-                      'Rate limit exceeded, please upgrade your plan'
-      it_behaves_like 'http error', 500,
-                      'Server error 500: Ignored'
-    end
-
-    context 'when body is invalid JSON' do
-      let(:bad) { instance_double('Net::HTTPResponse', is_a?: true, code: '200', body: 'nope') }
-      before { allow(http_client).to receive(:get_response).and_return(bad) }
-
-      it 'raises invalid JSON' do
-        expect { provider.latest }.to raise_error(RuntimeError, 'Invalid JSON response')
+      it "500..599 returns server error without relying on #message" do
+        allow(described_class).to receive(:get).and_return(http_resp.call(code: 500, body: ""))
+        expect { provider.latest }.to raise_error(RuntimeError, "Server error 500")
       end
     end
 
-    context 'when JSON has no data key' do
-      let(:bad_json) { { 'foo' => {} }.to_json }
-      let(:bad)      { instance_double('Net::HTTPResponse', is_a?: true, code: '200', body: bad_json) }
-      before { allow(http_client).to receive(:get_response).and_return(bad) }
+    context "when response body is invalid JSON" do
+      it "raises 'Invalid JSON response'" do
+        allow(described_class).to receive(:get).and_return(http_resp.call(code: 200, body: "nope"))
+        expect { provider.latest }.to raise_error(RuntimeError, "Invalid JSON response")
+      end
+    end
 
-      it 'raises KeyError' do
+    context "when JSON has no data key" do
+      it "raises KeyError" do
+        bad = { "foo" => {} }.to_json
+        allow(described_class).to receive(:get).and_return(http_resp.call(code: 200, body: bad))
         expect { provider.latest }.to raise_error(KeyError)
       end
     end
 
-    context 'when network fails' do
-      before { allow(http_client).to receive(:get_response).and_raise(SocketError.new('down')) }
-
-      it 'raises network error' do
-        expect { provider.latest }.to raise_error(RuntimeError, 'Network error: down')
+    context "when the network fails" do
+      it "raises a network error" do
+        allow(described_class).to receive(:get).and_raise(SocketError.new("down"))
+        expect { provider.latest }.to raise_error(RuntimeError, "Network error: down")
       end
     end
   end
