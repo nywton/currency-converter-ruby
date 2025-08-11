@@ -27,7 +27,7 @@ Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/) intend to solve
 - [Project Structure](#project-structure)
 - [Useful Docker Commands](#useful-docker-commands)
 - [Api Reference](#api-reference)
-  - [Create Session](#creating-session)
+  - [Create Session](#create-session)
   - [List Transactions](#list-transactions)
   - [Create Transaction](#creating-transaction)
 - [CLI Usage](#cli-usage)
@@ -583,11 +583,9 @@ The ExchangeRateProvider class can be used to fetch exchange rates from Currency
 
 **`lib/tasks/exchange_rates.rake`**
 
-# Exchange Rates Rake Task
+### Exchange Rates Rake Task
 
-Fetch the latest exchange rates until midnight.
-
-## Run locally
+1. Fetch the latest exchange rates until midnight.
 
 ```bash
 bin/rails exchange_rates:latest
@@ -596,7 +594,9 @@ bin/rails exchange_rates:latest
 CURRENCY_API_KEY=your_key_here bin/rails exchange_rates:latest
 ````
 
-## Run with Docker
+### Run with Docker
+
+2. Fetch all rates with Docker:
 
 ```bash
 docker compose run --rm web bin/rails exchange_rates:latest
