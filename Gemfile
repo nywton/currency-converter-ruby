@@ -30,6 +30,8 @@ gem "httparty"
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 # gem "rack-cors"
 
+gem "dotenv", groups: [ :development ]
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -42,8 +44,6 @@ group :development, :test do
 
   # Use RSpec for testing [https://rspec.info/]
   gem "rspec-rails", "~> 8.0.0"
-
-  gem "dotenv"
 end
 
 group :test do
