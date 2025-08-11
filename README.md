@@ -24,6 +24,7 @@ Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/) intend to solve
 - [Quickstart](#quickstart)
 - [Installation](#installation)
 - [Testing](#testing)
+- [Project Structure](#project-structure)
 - [Useful Docker Commands](#useful-docker-commands)
 - [Api Reference](#api-reference)
   - [Create Session](#creating-session)
@@ -226,6 +227,51 @@ Or if you want run guard:
 bundle exec guard
 ```
 A sample spec file lives at `spec/lib/fixtures/requests/currencyapi/get_latest_currency.json`, representing the response from the CurrencyAPI.
+
+---
+
+## Project Structure
+
+```plaintext
+.
+├── app
+│   ├── controllers
+│   │   ├── application_controller.rb
+│   │   ├── concerns
+│   │   │   ├── authentication.rb             # JWT authentication helpers
+│   │   │   └── exchange_rates.rb             # Cached latest USD rates
+│   │   ├── sessions_controller.rb            # POST /session (login, JWT issuance)
+│   │   ├── list_transactions_controller.rb   # GET /transactions (list by current user or ?user_id)
+│   │   └── api/v1/transactions_controller.rb # POST /transactions (create transaction)
+│   ├── models
+│   │   ├── user.rb                           # User authentication & associations
+│   │   └── transaction.rb                    # Transaction model (currencies, values, rate)
+│   ├── services
+│   │   ├── transactions/create.rb            # Service: convert & save transaction
+│   │   └── exchange_rate_converter.rb        # Pure currency conversion logic
+│   └── serializers
+│       └── api/v1/transactions_serializer.rb # Transaction JSON shape
+│
+├── lib
+│   ├── exchange_rate_provider.rb             # Client for CurrencyAPI `/latest`
+│   └── tasks
+│       └── exchange_rates.rake               # Rake task: warm cache & print rates
+│
+├── config
+│   └── routes.rb                             # Routes for sessions & transactions
+│
+├── spec
+│   ├── requests/                             # Request specs for controllers
+│   ├── controllers/concerns/                 # Specs for shared controller logic
+│   ├── services/                             # Specs for service objects
+│   ├── lib/                                  # Specs for integrations
+│   ├── lib/tasks/                            # Specs for rake tasks
+│   └── fixtures/requests/currencyapi/        # Sample API responses
+│
+├── Dockerfile
+├── docker-compose.yml                        # Containers for dev/test environment
+└── sample.env                                # Required env vars (CURRENCY_API_KEY, JWT_SECRET_KEY)
+````
 
 ---
 
