@@ -537,11 +537,11 @@ The ExchangeRateProvider class can be used to fetch exchange rates from Currency
 
 ```bash
 # Default base is USD
-docker compose run --rm --remove-orphans web bin/rails runner "puts ExchangeRateProvider.new.latest"
+docker compose run --rm web bin/rails runner "puts ExchangeRateProvider.new(api_key: ENV.fetch('CURRENCY_API_KEY')).latest"
 # => { "EUR" => 0.92, "BRL" => 5.50, ... }
 
 # Fetch specific base and targets:
-docker compose run --rm web --remove-orphans bin/rails runner "puts ExchangeRateProvider.new.latest(base: 'BRL', targets: ['USD', 'EUR'])"
+docker compose run --rm web --remove-orphans bin/rails runner "puts ExchangeRateProvider.new(api_key: ENV.fetch('CURRENCY_API_KEY')).latest(base: 'BRL', targets: ['USD', 'EUR'])"
 # => {"USD" => 0.1832108847, "EUR" => 0.1570722103}
 ```
 
@@ -553,7 +553,7 @@ $ irb -r ./lib/exchange_rate_provider
 
 # in irb
 # 1. Instantiate the provider (uses Net::HTTP by default):
-provider = ExchangeRateProvider.new
+provider = ExchangeRateProvider.new(api_key: ENV.fetch('CURRENCY_API_KEY'))
 
 # 2. Fetch all rates (base USD):
 rates = provider.latest
@@ -580,11 +580,11 @@ The RateConverter class can be used to convert amounts using exchange rates fetc
 
 ```bash
 # Default base is USD. Convert 100 usd to brl:
-docker compose run --rm --remove-orphans web bin/rails runner "puts RateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'usd', target: 'brl')"
+docker compose run --rm --remove-orphans web bin/rails runner "puts RateConverter.new(ExchangeRateProvider.new(api_key: ENV.fetch('CURRENCY_API_KEY')).latest).convert(100, base: 'usd', target: 'brl')"
 # => 550.1471065
 
 # Convert specific base and target:
-docker compose run --rm --remove-orphans web bin/rails runner "puts RateConverter.new(ExchangeRateProvider.new.latest).convert(100, base: 'brl', target: 'usd')"
+docker compose run --rm --remove-orphans web bin/rails runner "puts RateConverter.new(ExchangeRateProvider.new(api_key: ENV.fetch('CURRENCY_API_KEY')).latest).convert(100, base: 'brl', target: 'usd')"
 
 # Run from fixtures:
 ```
@@ -603,7 +603,7 @@ require_relative 'lib/exchange_rate_provider'
 require_relative 'lib/exchange_rate_converter'
 
 # 1. fetch the current rates:
-rates = ExchangeRateProvider.new.latest(base: 'usd', targets: %w[usd eur brl jpy])
+rates = ExchangeRateProvider.new(api_key: ENV.fetch('CURRENCY_API_KEY')).latest(base: 'usd', targets: %w[usd eur brl jpy])
 
 # 2. instantiate the converter with the rates:
 converter = RateConverter.new(rates)
