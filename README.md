@@ -84,6 +84,7 @@ NOTE: For local development you can generate a random key using `openssl rand -h
 
 
 ```bash
+# With openssl
 openssl rand -hex 64
 
 # With rails locally
@@ -127,27 +128,28 @@ curl -X POST http://localhost:3000/session \
 
 3. That will return:
 ```json
-{"token":"eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3NTQ3MDEzNzR9.CfwA_v65OXetxtoooW9Ewa-2DAIS9CtwHdmtgfthX_I"}
+{"user_id":1,"token":"eyJhbGciOiJIUzI1NiJ9..."}
 ```
 
-4. Use the `token` to make requests to the API
-
-Create a transaction.
-
-```bash
-curl -X GET http://localhost:3000/transactions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3NTQ3MDEzNzR9.CfwA_v65OXetxtoooW9Ewa-2DAIS9CtwHdmtgfthX_I" \
-  -d '{"from_currency":"USD","to_currency":"BRL","from_value":100}'
-```
+4. Use the `token` and `user_id` to make requests to the API
 
 List transactions
 
 ```bash
 curl -X GET http://localhost:3000/transactions?user_id=1 \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3NTQ3MDEzNzR9.CfwA_v65OXetxtoooW9Ewa-2DAIS9CtwHdmtgfthX_I" \
+  -H "Authorization: Bearer <token>" \
 ```
+
+Create a transaction.
+
+```bash
+curl -X GET http://localhost:3000/transactions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"from_currency":"USD","to_currency":"BRL","from_value":100}'
+```
+
 ---
 
 ## Installation and Running Locally
@@ -223,7 +225,6 @@ Or if you want run guard:
 ```bash
 bundle exec guard
 ```
-
 A sample spec file lives at `spec/lib/fixtures/requests/currencyapi/get_latest_currency.json`, representing the response from the CurrencyAPI.
 
 ---

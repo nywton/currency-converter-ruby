@@ -25,6 +25,7 @@ RSpec.describe SessionsController, type: :request do
 
         body = JSON.parse(response.body)
         expect(body).to have_key("token")
+        expect(body.fetch("user_id")).to eq(user.id)
 
         token   = body.fetch("token")
         payload, = JWT.decode(token, jwt_secret, true, algorithm: "HS256")

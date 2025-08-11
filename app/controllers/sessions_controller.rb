@@ -5,7 +5,7 @@ class SessionsController < ApplicationController
   def create
     return render_unauthorized unless (user = authenticate_user)
 
-    render json: { token: issue_jwt(user) }, status: :created
+    render json: { user_id: user.id, token: issue_jwt(user) }, status: :created
   rescue ArgumentError
     render_unauthorized("Missing email or password")
   end
