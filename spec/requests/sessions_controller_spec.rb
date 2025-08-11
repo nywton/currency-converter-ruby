@@ -3,23 +3,14 @@ require "jwt"
 
 RSpec.describe SessionsController, type: :request do
   let(:jwt_secret) { "test_secret" }
-  let(:user)       { instance_double(User, id: 42) }
+  let!(:user)       { create(:user, email_address: "jane@example.com", password: "secret", password_confirmation: "secret") }
   let(:url)        { session_path }
+  let(:valid_attributes) { { email_address: "jane@example.com", password: "secret" } }
 
-  before do
-    allow(ENV).to receive(:fetch).with("JWT_SECRET").and_return(jwt_secret)
-  end
-
-  describe "POST api/v1/session" do
+  describe "POST /session" do
     context "with valid credentials" do
-      before do
-        allow(User).to receive(:authenticate_by).and_return(user)
-      end
-
       it "returns HTTP 201 and a valid JWT token" do
-        post url,
-             params: { email_address: "jane@example.com", password: "secret" },
-             as: :json
+        post url, params: valid_attributes, as: :json
 
         expect(response).to have_http_status(:created)
 
@@ -52,7 +43,6 @@ RSpec.describe SessionsController, type: :request do
 
     context "when email_address is missing" do
       before do
-        # simulate missing-param exception in authenticate_by
         allow(User).to receive(:authenticate_by).and_raise(ArgumentError)
       end
 
