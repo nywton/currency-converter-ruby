@@ -1,58 +1,89 @@
 require "httparty"
 require "json"
 
-# ExchangeRateProvider fetches exchange rates from CurrencyAPI.
-#
-# @example
-#   provider = ExchangeRateProvider.new(api_key: ENV.fetch("CURRENCY_API_KEY"))
-#   rates    = provider.latest(base: "USD", targets: %w[EUR BRL])
-#   puts rates # => { "EUR" => 0.92, "BRL" => 5.12 }
-#
-# @see https://currencyapi.com/docs/latest#latest-currency-exchange-data
 class ExchangeRateProvider
   include HTTParty
-
   base_uri "https://api.currencyapi.com"
 
+  RETRYABLE_CODES  = (500..599).to_a + [ 429 ]
+  RETRYABLE_ERRORS = [
+    SocketError, Timeout::Error, Errno::ECONNRESET,
+    Net::OpenTimeout, Net::ReadTimeout
+  ].freeze
+  MAX_RETRIES      = 3
+  RETRY_DELAY_SEC  = 0.5
+
   def initialize(api_key: nil, version: "v3")
-    @params  = {}
-    @params[:apikey] = api_key || raise("CURRENCY_API_KEY must be set")
-    @version = version
+    raise "CURRENCY_API_KEY must be set" if api_key.blank?
+    @base_params = { apikey: api_key }
+    @version     = version
   end
 
-  # Fetches the latest exchange rates from CurrencyAPI.
-  #
-  # @param base    [String] base currency code (default "USD")
-  # @param targets [Array<String>, String, nil] target currency codes
-  # @return [Hash<String, Float>]
   def latest(base: "USD", targets: nil)
-    @params[:base_currency] = base.to_s.upcase
-    @params[:currencies]    = Array(targets).map(&:upcase).join(",") if targets
+    query = @base_params.dup
+    query[:base_currency] = base.to_s.upcase
+    query[:currencies]    = Array(targets).map(&:upcase).join(",") if targets
+    path = "/#{@version}/latest"
 
-    response = self.class.get("/#{@version}/latest", query: @params)
+    response = with_retries do
+      log_request(:get, path, query) { self.class.get(path, query: query) }
+    end
+
     handle_http_errors!(response)
-
     parsed = parse_json!(response.body)
     rates  = extract_rates(parsed)
     filter_rates(rates, targets)
-  rescue SocketError => e
+  rescue *RETRYABLE_ERRORS => e
     raise "Network error: #{e.message}"
   end
 
   private
 
+  def with_retries
+    attempts = 0
+
+    loop do
+      attempts += 1
+      begin
+        resp = yield
+
+        if resp.respond_to?(:code) && RETRYABLE_CODES.include?(resp.code.to_i) && attempts <= MAX_RETRIES
+          sleep RETRY_DELAY_SEC
+          next
+        end
+
+        return resp
+      rescue *RETRYABLE_ERRORS
+        raise if attempts > MAX_RETRIES
+        sleep RETRY_DELAY_SEC
+        next
+      end
+    end
+  end
+
+  def log_request(http_verb, path, query)
+    Rails.logger.tagged("ExchangeRateProvider") do
+      Rails.logger.info("→ #{http_verb.upcase} #{path} #{redact_apikey(query)}")
+      resp = yield
+      Rails.logger.info("← #{resp.code} #{path}")
+      resp
+    end
+  end
+
+  def redact_apikey(query)
+    query.merge(apikey: "[REDACTED]").to_a.map { |k, v| "#{k}=#{v}" }.join("&")
+  end
+
   def handle_http_errors!(resp)
     code = resp.code.to_i
     return if code.between?(200, 299)
-
     case code
-    when 403 then raise "Forbidden: you are not allowed to use this endpoint, please upgrade your plan"
+    when 403 then raise "Forbidden: please upgrade your plan"
     when 404 then raise "Endpoint not found"
     when 422 then raise_validation_error!(resp.body)
-    when 429 then raise "Rate limit exceeded, please upgrade your plan"
+    when 429 then raise "Rate limit exceeded"
     when 500..599 then raise "Server error #{code}"
-    else
-      raise "HTTP error #{code}"
+    else raise "HTTP error #{code}"
     end
   end
 
@@ -72,8 +103,7 @@ class ExchangeRateProvider
   end
 
   def extract_rates(parsed_body)
-    parsed_body.fetch("data")
-               .transform_values { |h| h.fetch("value") }
+    parsed_body.fetch("data").transform_values { |h| h.fetch("value") }
   end
 
   def filter_rates(rates, targets)

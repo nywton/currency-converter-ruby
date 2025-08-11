@@ -8,7 +8,10 @@ RSpec.describe ExchangeRateProvider do
   let(:raw_json)    { File.read(fixture_path) }
   let(:sample_data) { JSON.parse(raw_json)["data"] }
 
+
   subject(:provider) { described_class.new(api_key: "dummy-key") }
+
+  before { allow(provider).to receive(:sleep) }
 
   let(:http_resp) do
     ->(code:, body: "") { instance_double("HTTParty::Response", code: code, body: body) }
@@ -80,6 +83,83 @@ RSpec.describe ExchangeRateProvider do
       )
     end
 
+    context "retry logic" do
+      before { allow(provider).to receive(:sleep) } # don't actually sleep
+
+      it "retries on 500 and then succeeds" do
+        allow(described_class).to receive(:get)
+          .and_return(
+            http_resp.call(code: 500, body: ""),
+            http_resp.call(code: 200, body: raw_json)
+          )
+
+        expect(provider.latest).to be_a(Hash)
+        expect(described_class).to have_received(:get).twice
+      end
+
+      it "retries on 429 and then succeeds" do
+        allow(described_class).to receive(:get)
+          .and_return(
+            http_resp.call(code: 429, body: ""),
+            http_resp.call(code: 200, body: raw_json)
+          )
+
+        expect(provider.latest).to be_a(Hash)
+        expect(described_class).to have_received(:get).twice
+      end
+
+      it "retries on a network error and then succeeds" do
+        calls = [
+          -> { raise Net::ReadTimeout.new("rt") },
+          -> { http_resp.call(code: 200, body: raw_json) }
+        ]
+        allow(described_class).to receive(:get) { calls.shift.call }
+
+        expect(provider.latest).to be_a(Hash)
+        expect(described_class).to have_received(:get).twice
+      end
+
+      it "gives up after MAX_RETRIES for 500 and raises server error" do
+        attempts = described_class::MAX_RETRIES + 1
+        allow(described_class).to receive(:get)
+          .and_return(*Array.new(attempts) { http_resp.call(code: 500, body: "") })
+
+        expect { provider.latest }.to raise_error(RuntimeError, "Server error 500")
+        expect(described_class).to have_received(:get).exactly(attempts).times
+      end
+
+      it "gives up after MAX_RETRIES for 429 and raises rate limit" do
+        attempts = described_class::MAX_RETRIES + 1
+        allow(described_class).to receive(:get)
+          .and_return(*Array.new(attempts) { http_resp.call(code: 429, body: "") })
+
+        expect { provider.latest }.to raise_error(RuntimeError, "Rate limit exceeded")
+        expect(described_class).to have_received(:get).exactly(attempts).times
+      end
+
+      it "gives up after MAX_RETRIES for network errors and raises Network error: ..." do
+        # Make every call raise a retryable exception
+        allow(described_class).to receive(:get) { raise SocketError.new("down") }
+
+        expect { provider.latest }.to raise_error(RuntimeError, "Network error: down")
+        expect(described_class).to have_received(:get).exactly(described_class::MAX_RETRIES + 1).times
+      end
+
+      it "does not retry on non-retryable HTTP errors (e.g., 404)" do
+        allow(described_class).to receive(:get).and_return(http_resp.call(code: 404, body: ""))
+        expect { provider.latest }.to raise_error(RuntimeError, "Endpoint not found")
+        expect(described_class).to have_received(:get).once
+      end
+
+      it "does not retry on 422 and raises the parsed validation message" do
+        body = { "error" => { "message" => "Currency ABC is invalid", "type" => "validation" } }.to_json
+        allow(described_class).to receive(:get).and_return(http_resp.call(code: 422, body: body))
+
+        expect { provider.latest }.to raise_error(RuntimeError, "Validation error (validation): Currency ABC is invalid")
+        expect(described_class).to have_received(:get).once
+      end
+    end
+
     context "HTTP errors" do
       shared_examples "http error" do |code, message, body = ""|
         it "raises for #{code}" do
@@ -88,17 +168,12 @@ RSpec.describe ExchangeRateProvider do
         end
       end
 
-      include_examples "http error", 403,
-        "Forbidden: you are not allowed to use this endpoint, please upgrade your plan"
-
+      include_examples "http error", 403, "Forbidden: please upgrade your plan"
       include_examples "http error", 404, "Endpoint not found"
-
       include_examples "http error", 422,
-        "Validation error (): Currency ABC is invalid",
-        { "error" => { "message" => "Currency ABC is invalid" } }.to_json
-
-      include_examples "http error", 429,
-        "Rate limit exceeded, please upgrade your plan"
+        "Validation error (validation): Currency ABC is invalid",
+        { "error" => { "type" => "validation", "message" => "Currency ABC is invalid" } }.to_json
+      include_examples "http error", 429, "Rate limit exceeded"
 
       it "falls back to generic message for unexpected codes" do
         allow(described_class).to receive(:get).and_return(http_resp.call(code: 418, body: ""))
@@ -126,9 +201,10 @@ RSpec.describe ExchangeRateProvider do
       end
     end
 
-    context "when the network fails" do
+    context "when the network fails once and never recovers (covered above too)" do
       it "raises a network error" do
-        allow(described_class).to receive(:get).and_raise(SocketError.new("down"))
+        allow(provider).to receive(:sleep)
+        allow(described_class).to receive(:get) { raise SocketError.new("down") }
         expect { provider.latest }.to raise_error(RuntimeError, "Network error: down")
       end
     end
