@@ -25,9 +25,9 @@ Made with 💚 for my friends at [Jaya.tech](https://jaya.tech/) intend to solve
 - [Installation](#installation)
 - [Testing](#testing)
 - [Useful Docker Commands](#useful-docker-commands)
-- [Session API](#session-api)
+- [Api Reference](#api-reference)
   - [Create Session](#creating-session)
-- [Transactions API](#transactions-api)
+  - [List Transactions](#list-transactions)
   - [Create Transaction](#creating-transaction)
 - [CLI Usage](#cli-usage)
   - [Fetching Rates from CurrencyAPI](#fetching-rates-from-currencyapi)
@@ -265,11 +265,11 @@ docker compose down --rmi all --volumes --remove-orphans
 ```
 ---
 
-## Session API
-
-Authenticate a user and obtain a JSON Web Token (JWT) for subsequent requests.
+## Api Reference
 
 ### Create Session
+
+Authenticate a user and obtain a JSON Web Token (JWT) for subsequent requests.
 
 ```
 POST /session
@@ -333,15 +333,99 @@ curl -X POST http://localhost:3000/session \
 
 ---
 
-## Transactions API
+## List Transactions
 
-Create a new transaction record.
+Retrieve a list of transactions.
+By default, this returns the authenticated user’s transactions in **descending order of creation time** (newest first).
+You can optionally filter by `user_id`.
 
-### Create Transaction
+```
+GET /transactions
+```
+### Example Request with cURL
+
+```bash
+curl -X GET "http://localhost:3000/api/v1/transactions" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json"
+```
+
+**Example with user\_id
+
+```bash
+curl -X GET "http://localhost:3000/api/v1/transactions?user_id=123" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json"
+```
+
+---
+
+### Request Details
+
+* **URL:** `http://localhost:3000/transactions`
+* **Method:** `GET`
+* **Headers:**
+
+  * `Content-Type: application/json`
+  * `Authorization: Bearer <token>`
+* **Query Parameters:**
+
+  * `user_id` *(optional, integer)* – return transactions for the given user ID
+
+---
+
+### Successful Response
+
+* **Status:** `200 OK`
+* **Body:**
+
+```json
+[
+  {
+    "transaction_id": 987,
+    "user_id": 123,
+    "from_currency": "USD",
+    "to_currency": "BRL",
+    "from_value": 100.0,
+    "to_value": 525.32,
+    "rate": 5.2532,
+    "timestamp": "2025-08-08T14:30:45.123Z"
+  },
+  {
+    "transaction_id": 986,
+    "user_id": 123,
+    "from_currency": "EUR",
+    "to_currency": "USD",
+    "from_value": 50.0,
+    "to_value": 54.35,
+    "rate": 1.087,
+    "timestamp": "2025-08-07T10:12:30.456Z"
+  }
+]
+```
+---
+
+### Error Responses
+
+* **Status:** `401 Unauthorized`
+  **Body:**
+
+  ```json
+  {
+    "error": "Invalid credentials"
+  }
+  ```
+---
+
+## Create Transaction
+
+Creates a new currency exchange transaction for the authenticated user.
+The transaction stores the original amount, the converted amount, and the exchange rate used at the time of creation.
 
 ```
 POST /transactions
 ```
+---
 
 ### Example Request with cURL
 
@@ -358,60 +442,81 @@ curl -X POST http://localhost:3000/api/v1/transactions \
       }'
 ```
 
+---
+
 ### Request Details
 
-* **URL:** `http://localhost:3000/transactions`
+* **URL:** `http://localhost:3000/api/v1/transactions`
+* **Method:** `POST`
 * **Headers:**
 
-  * `Content-Type: application/json`
-  * `Authorization: Bearer <token>`
-* **Body:**
+  * `Content-Type: application/json` – request body format
+  * `Authorization: Bearer <token>` – valid JWT token for the user
+* **Body Parameters:**
 
-  ```json
-  {
-    "transaction": {
-      "user_id": 123,
-      "from_currency": "USD",
-      "to_currency": "BRL",
-      "from_value": 100,
-      "to_value": 525.32,
-      "rate": 5.2532
-    }
-  }
-  ```
+| Field           | Type    | Required | Description                                                                                                                             |
+| --------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `from_currency` | string  | required | The 3-letter ISO currency code to convert **from** (e.g., `"USD"`). Must be a supported currency.                                       |
+| `to_currency`   | string  | required | The 3-letter ISO currency code to convert **to** (e.g., `"BRL"`). Must be a supported currency.                                         |
+| `from_value`    | decimal | required | The amount in the `from_currency` to be converted. Must be greater than 0.                                                              |
+
+---
 
 ### Successful Response
 
 * **Status:** `201 Created`
 * **Body:**
 
-  ```json
-  {
-    "transaction_id": 987,
-    "user_id": 123,
-    "from_currency": "USD",
-    "to_currency": "BRL",
-    "from_value": 100.0,
-    "to_value": 525.32,
-    "rate": 5.2532,
-    "timestamp": "2025-08-08T14:30:45.123Z"
-  }
-  ```
+```json
+{
+  "transaction_id": 987,
+  "user_id": 123,
+  "from_currency": "USD",
+  "to_currency": "BRL",
+  "from_value": 100.0,
+  "to_value": 525.32,
+  "rate": 5.2532,
+  "timestamp": "2025-08-08T14:30:45.123Z"
+}
+```
+
+**Response Attributes:**
+
+| Field            | Type    | Description                                          |
+| ---------------- | ------- | ---------------------------------------------------- |
+| `transaction_id` | integer | Unique identifier for the transaction.               |
+| `user_id`        | integer | ID of the user who created the transaction.          |
+| `from_currency`  | string  | Currency code of the original amount.                |
+| `to_currency`    | string  | Currency code of the converted amount.               |
+| `from_value`     | decimal | Original amount before conversion.                   |
+| `to_value`       | decimal | Converted amount after applying the exchange rate.   |
+| `rate`           | decimal | Exchange rate used for conversion.                   |
+| `timestamp`      | string  | ISO 8601 timestamp when the transaction was created. |
+
+---
 
 ### Error Responses
 
 * **Status:** `422 Unprocessable Content`
   **Body:**
 
-  ```json
-  {
-    "errors": [
-      "From currency is not a supported currency code",
-      "Rate must be greater than or equal to 0.0001"
-    ]
-  }
-  ```
+```json
+{
+  "errors": [
+    "From currency is not a supported currency code",
+    "Rate must be greater than or equal to 0.0001"
+  ]
+}
+```
 
+* **Status:** `401 Unauthorized` *(missing or invalid token)*
+  **Body:**
+
+```json
+{
+  "error": "Invalid credentials"
+}
+```
 ---
 
 ## CLI Usage
@@ -568,10 +673,6 @@ amount_in_brl = converter.convert(100, base: 'usd', target: 'brl')
 
 * Converts amounts between any two currencies using USD-anchored rates.
 * **Benefit:** Pure, reusable logic independent from API or caching, easy to test and swap data sources. Permits conversion of any currency from any currency.
-
-## **Risks / Next Steps**
-
-* Centralize **error handling and timeouts** in `ExchangeRateProvider` (consider circuit breaker/retry with jitter).
 
 ---
 
