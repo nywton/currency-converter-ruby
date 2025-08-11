@@ -535,14 +535,30 @@ The ExchangeRateProvider class can be used to fetch exchange rates from Currency
 
 1. Fetch all rates with Docker: (ensure you have `CURRENCY_API_KEY` set in your environment)
 
-```bash
-# Default base is USD
-docker compose run --rm web bin/rails runner "puts ExchangeRateProvider.new(api_key: ENV.fetch('CURRENCY_API_KEY')).latest"
-# => { "EUR" => 0.92, "BRL" => 5.50, ... }
+**`lib/tasks/exchange_rates.rake`**
 
-# Fetch specific base and targets:
-docker compose run --rm web --remove-orphans bin/rails runner "puts ExchangeRateProvider.new(api_key: ENV.fetch('CURRENCY_API_KEY')).latest(base: 'BRL', targets: ['USD', 'EUR'])"
-# => {"USD" => 0.1832108847, "EUR" => 0.1570722103}
+# Exchange Rates Rake Task
+
+Fetch the latest exchange rates until midnight.
+
+## Run locally
+
+```bash
+bin/rails exchange_rates:latest
+
+# or
+CURRENCY_API_KEY=your_key_here bin/rails exchange_rates:latest
+````
+
+## Run with Docker
+
+```bash
+docker compose run --rm web bin/rails exchange_rates:latest
+
+# or
+docker compose run --rm \
+  -e CURRENCY_API_KEY=your_key_here \
+  web bin/rails exchange_rates:latest
 ```
 
 2. Fetch all rates with local Ruby:
