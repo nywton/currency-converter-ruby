@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+Here’s the **English version** of your release notes:
+
+---
+
+## [1.0.0] – 2025-08-09
+
+### Added
+
+* **Logging for Currency Service** – `ExchangeRateProvider` now logs requests and responses, making debugging and monitoring easier.
+* **Automatic Retries** – Added retry mechanism for currency API calls in case of temporary failures or error responses.
+* **Transaction API Documentation** – Added detailed section on creating and listing transactions, including request/response examples.
+
+### Changed
+
+* Overall documentation updates with clearer descriptions and more complete examples.
+
+### Technical
+
+* Improved code structure for easier maintenance and testing.
+
+---
+
 ## [0.3.0] – 2025-08-09
 
 ### Added
@@ -63,12 +85,12 @@ amount_in_brl = converter.convert(100, base: 'usd', target: 'brl')
 ### Added
 
 * **New class** `ExchangeRateProvider`
-  Fetches live rates from CurrencyAPI with a simple constructor:
+Fetches live rates from CurrencyAPI with a simple constructor:
 
   ```ruby
   provider = ExchangeRateProvider.new(
-    http_client: Net::HTTP,           # injectable HTTP client
-    api_key: 'your-api-key'           # or via ENV['CURRENCY_API_KEY']
+      http_client: Net::HTTP,           # injectable HTTP client
+      api_key: 'your-api-key'           # or via ENV['CURRENCY_API_KEY']
   )
   ```
 * **Easy usage**
